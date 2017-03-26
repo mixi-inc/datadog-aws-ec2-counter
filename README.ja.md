@@ -1,7 +1,7 @@
 # datadog-aws-ec2-count
-AWS の EC2 のオンデマンドインスタンスの稼働状況を Datadog のカスタムメトリクスで取得するための Datadog プラグインです。
+AWS の EC2 のオンデマンドインスタンスの稼働状況を Datadog のカスタムメトリクスで取得するための Datadog カスタム Check です。
 
-この Datadog プラグインで取得できる情報は以下になります。
+この Datadog カスタム Check で取得できる情報は以下になります。
 
 - 稼働中の EC2 オンデマンドインスタンス数
 - 有効な EC2 リザーブドインスタンス数
@@ -10,11 +10,11 @@ AWS の EC2 のオンデマンドインスタンスの稼働状況を Datadog �
 
 この情報を利用することにより、リザーブドインスタンスの契約の参考にしたり、無駄になっているリザーブドインスタンス契約を発見することができます。
 
-これらの情報は AWS コンソールの EC2 レポートでも確認することができますが、この Datadog プラグインを用いることでリアルタイムかつ、時間ごとの利用状況を詳細に把握できるようになります。
+これらの情報は AWS コンソールの EC2 レポートでも確認することができますが、この Datadog カスタム Check を用いることでリアルタイムかつ、時間ごとの利用状況を詳細に把握できるようになります。
 
 # メトリクス一覧
 
-このプラグインで取得されるメトリクス一覧は以下となります。
+このカスタム Check で取得されるメトリクス一覧は以下となります。
 
 | メトリクス | 内容 |
 |-|-|
@@ -52,14 +52,14 @@ Datadog プラグインから [AWS SDK for Python](https://aws.amazon.com/jp/sdk
 $ sudo /opt/datadog-agent/embedded/bin/pip install boto3
 ```
 
-## 2. プラグインのインストール
+## 2. カスタム Check のインストール
 このリポジトリの `checks.d/aws-ec2-count.py` を `/etc/dd-agent/checks.d/` に配置します。
 
 ```bash
 $ sudo cp ./checks.d/aws-ec2-count.py /etc/dd-agent/checks.d/
 ```
 
-## 3. プラグインの設定ファイルの配置
+## 3. カスタム Check の設定ファイルの配置
 このリポジトリの `conf.d/aws-ec2-count.yaml.example` を参考に、 `/etc/dd-agent/conf.d/aws-ec2-count.yaml` を作成します。
 
 ```yaml:aws-ec2-count.yaml
@@ -80,7 +80,7 @@ $ sudo cp conf.d/aws-ec2-count.yaml.example /etc/dd-agent/conf.d/aws-ec2-count.y
 ```
 
 ## 4. Datadog Agent の再起動
-以上でプラグインのインストールは完了です。
+以上でカスタム Check のインストールは完了です。
 最後に Datadog Agent を再起動します。
 
 ```bash
@@ -90,7 +90,7 @@ $ sudo /etc/init.d/datadog-agent restart
 これで、Datadog にカスタムメトリクスが送信されているはずです。
 
 # 制限事項
-この Datadog プラグインには以下の制限事項があります。
+このカスタム Check には以下の制限事項があります。
 
 - オンデマンドインスタンス数は、稼働中のインスタンスと有効なリザーブドインスタンス数との差分で求めています
   - なので、請求額と完全に一致しない場合があります
