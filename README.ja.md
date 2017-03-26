@@ -14,7 +14,9 @@ AWS の EC2 のオンデマンドインスタンスの稼働状況を Datadog �
 
 # メトリクス一覧
 
-| メトリクス名 | 内容 |
+このプラグインで取得されるメトリクス一覧は以下となります。
+
+| メトリクス | 内容 |
 |-|-|
 | aws_ec2_count.ondemand.count | 稼働中の EC2 オンデマンドインスタンス数 |
 | aws_ec2_count.reserved.count | 有効な EC2 リザーブドインスタンス数 |
@@ -29,14 +31,68 @@ AWS の EC2 のオンデマンドインスタンスの稼働状況を Datadog �
 | ac-instance-type | インスタンスタイプ |
 
 # 用意するもの
-まず、Datadog プラグインをインストールするための、以下の EC2 インスタンスを用意します。
+
+以下の EC2 インスタンスを用意します。
 
 - Datadog Agent をインストール
 - IAM Role で `ec2:DescribeInstances` 権限を付与
 
+このインスタンスに、この Datadog プラグインをインストールします。
+
 # インストール方法
+
+ここでは、CentOS にインストールした Datadog Agent に、このプラグインをインストールする方法を記載します。
+インストール環境によって適宜読み替えてください。
+
+## 1. AWS SDK のインストール
+
+Datadog プラグインから [AWS SDK for Python](https://aws.amazon.com/jp/sdk-for-python/) が利用できるようにインストールを行います。
+
+```bash
+$ sudo /opt/datadog-agent/embedded/bin/pip install boto3
+```
+
+## 2. プラグインのインストール
+このリポジトリの `checks.d/aws-ec2-count.py` を `/etc/dd-agent/checks.d/` に配置します。
+
+```bash
+$ sudo cp ./checks.d/aws-ec2-count.py /etc/dd-agent/checks.d/
+```
+
+## 3. プラグインの設定ファイルの配置
+このリポジトリの `conf.d/aws-ec2-count.yaml.example` を参考に、 `/etc/dd-agent/conf.d/aws-ec2-count.yaml` を作成します。
+
+```yaml:aws-ec2-count.yaml
+init_config:
+    min_collection_interval: 60
+
+instances:
+    - region: 'ap-northeast-1'
+```
+
+- min_collection_interval にはチェック間隔（秒数）を指定します
+- region には、チェックを行うリージョンを記述します。複数リージョンを取得するには instances に配列で指定します。
+
+監視対象が東京リージョンであれば、この `aws-ec2-count.yaml.example` をそのまま利用すれば良いでしょう。
+
+```bash
+$ sudo cp conf.d/aws-ec2-count.yaml.example /etc/dd-agent/conf.d/aws-ec2-count.yaml
+```
+
+## 4. Datadog Agent の再起動
+以上でプラグインのインストールは完了です。
+最後に Datadog Agent を再起動します。
+
+```bash
+$ sudo /etc/init.d/datadog-agent restart
+```
+
+これで、Datadog にカスタムメトリクスが送信されているはずです。
 
 # 制限事項
 この Datadog プラグインには以下の制限事項があります。
 
-- 
+- オンデマンドインスタンス数は、稼働中のインスタンスから有効なリザーブドインスタンス数の差分で求めています
+  - なので、請求額と完全に一致しない場合があります
+- Windows インスタンスには対応していません
+- Region 単位のリザーブドインスタンスには対応していません
