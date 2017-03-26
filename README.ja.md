@@ -73,7 +73,7 @@ instances:
 - min_collection_interval にはチェック間隔（秒数）を指定します
 - region には、チェックを行うリージョンを記述します。複数リージョンを取得するには instances に配列で指定します。
 
-監視対象が東京リージョンであれば、この `aws-ec2-count.yaml.example` をそのまま利用すれば良いでしょう。
+取得対象が東京リージョンであれば、この `aws-ec2-count.yaml.example` をそのまま利用すれば良いでしょう。
 
 ```bash
 $ sudo cp conf.d/aws-ec2-count.yaml.example /etc/dd-agent/conf.d/aws-ec2-count.yaml
