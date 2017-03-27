@@ -38,6 +38,12 @@ class AwsEc2Count(AgentCheck):
                         ondemand_instances[availability_zone][instance_type],
                         availability_zone, instance_type
                     )
+                    if reserved_instances.get(availability_zone) and reserved_instances[availability_zone].get(instance_type):
+                        self.__send_gauge(
+                            'reserved.unused',
+                            0,
+                            availability_zone, instance_type
+                        )
                 else:
                     self.__send_gauge(
                         'ondemand.count',
