@@ -12,8 +12,11 @@ class AwsEc2Count(AgentCheck):
         ec2 = session.client('ec2')
 
         running_instances = self.__get_running_instances(ec2)
+        self.log.info('running_instances')
         for availability_zone in running_instances.keys():
+            self.log.info(availability_zone)
             for instance_type in running_instances[availability_zone].keys():
+                self.log.info('%s = %s' % (instance_type, running_instances[availability_zone][instance_type]))
                 self.__send_gauge(
                     'running.count',
                     running_instances[availability_zone][instance_type],
@@ -21,8 +24,11 @@ class AwsEc2Count(AgentCheck):
                 )
 
         reserved_instances = self.__get_reserved_instances(ec2)
+        self.log.info('reserved_instances')
         for availability_zone in reserved_instances.keys():
+            self.log.info(availability_zone)
             for instance_type in reserved_instances[availability_zone].keys():
+                self.log.info('%s = %s' % (instance_type, reserved_instances[availability_zone][instance_type]))
                 self.__send_gauge(
                     'reserved.count',
                     reserved_instances[availability_zone][instance_type],
@@ -30,8 +36,11 @@ class AwsEc2Count(AgentCheck):
                 )
 
         ondemand_instances = self.__get_ondemand_instances(running_instances, reserved_instances)
+        self.log.info('ondemand_instances')
         for availability_zone in ondemand_instances.keys():
+            self.log.info(availability_zone)
             for instance_type in ondemand_instances[availability_zone].keys():
+                self.log.info('%s = %s' % (instance_type, ondemand_instances[availability_zone][instance_type]))
                 if ondemand_instances[availability_zone][instance_type] >= 0:
                     self.__send_gauge(
                         'ondemand.count',
@@ -74,6 +83,7 @@ class AwsEc2Count(AgentCheck):
             running_instances = ec2.describe_instances(
                 Filters = [
                     { 'Name' : 'instance-state-name', 'Values' : [ 'running' ] },
+                    { 'Name' : 'tenancy',             'Values' : [ 'default' ] },
                 ],
                 MaxResults = 100,
                 NextToken = next_token,
@@ -112,8 +122,10 @@ class AwsEc2Count(AgentCheck):
 
         reserved_instances = ec2.describe_reserved_instances(
             Filters = [
-                { 'Name' : 'state', 'Values' : [ 'active' ] },
-                { 'Name' : 'scope', 'Values' : [ 'Availability Zone' ] },
+                { 'Name' : 'state',               'Values' : [ 'active' ] },
+                { 'Name' : 'scope',               'Values' : [ 'Availability Zone' ] },
+                { 'Name' : 'product-description', 'Values' : [ 'Linux/UNIX' ] },
+                { 'Name' : 'instance-tenancy',    'Values' : [ 'default' ] },
             ],
         )
 
