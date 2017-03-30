@@ -1,7 +1,7 @@
 # datadog-aws-ec2-count
-AWS の EC2 のオンデマンドインスタンスの稼働状況を Datadog のカスタムメトリクスで取得するための Datadog カスタム Check です。
+AWS の EC2 のオンデマンドインスタンスの稼働状況を Datadog のカスタムメトリクスで取得するための Datadog Custom Check です。
 
-この Datadog カスタム Check で取得できる情報は以下になります。
+この Custom Check で取得できる情報は以下になります。
 
 - 稼働中の EC2 オンデマンドインスタンス数
 - 有効な EC2 リザーブドインスタンス数
@@ -10,11 +10,11 @@ AWS の EC2 のオンデマンドインスタンスの稼働状況を Datadog �
 
 この情報を利用することにより、リザーブドインスタンスの契約の参考にしたり、無駄になっているリザーブドインスタンス契約を発見することができます。
 
-これらの情報は AWS コンソールの EC2 レポートでも確認することができますが、この Datadog カスタム Check を用いることでリアルタイムかつ、時間ごとの利用状況を詳細に把握できるようになります。
+これらの情報は AWS コンソールの EC2 レポートでも確認することができますが、この Custom Check を用いることでリアルタイムかつ、時間ごとの利用状況を詳細に把握できるようになります。
 
 # メトリクス一覧
 
-このカスタム Check で取得されるメトリクス一覧は以下となります。
+この Custom Check で取得されるメトリクス一覧は以下となります。
 
 | メトリクス | 内容 |
 |-|-|
@@ -37,16 +37,16 @@ AWS の EC2 のオンデマンドインスタンスの稼働状況を Datadog �
 - Datadog Agent をインストール
 - IAM Role で `ec2:DescribeInstances` 権限を付与
 
-このインスタンスに、この Datadog プラグインをインストールします。
+このインスタンスに、この Custom Check をインストールします。
 
 # インストール方法
 
-ここでは、CentOS にインストールした Datadog Agent に、このプラグインをインストールする方法を記載します。
+ここでは、CentOS にインストールした Datadog Agent に、この Custom Check をインストールする方法を記載します。
 インストール環境によって適宜読み替えてください。
 
 ## 1. AWS SDK のインストール
 
-Datadog プラグインから [AWS SDK for Python](https://aws.amazon.com/jp/sdk-for-python/) が利用できるようにインストールを行います。
+Custom Check から [AWS SDK for Python](https://aws.amazon.com/jp/sdk-for-python/) が利用できるようにインストールを行います。
 
 ```bash
 $ sudo /opt/datadog-agent/embedded/bin/pip install boto3
@@ -80,7 +80,7 @@ $ sudo cp conf.d/aws-ec2-count.yaml.example /etc/dd-agent/conf.d/aws-ec2-count.y
 ```
 
 ## 4. Datadog Agent の再起動
-以上でカスタム Check のインストールは完了です。
+以上で Custom Check のインストールは完了です。
 最後に Datadog Agent を再起動します。
 
 ```bash
@@ -90,7 +90,7 @@ $ sudo /etc/init.d/datadog-agent restart
 これで、Datadog にカスタムメトリクスが送信されているはずです。
 
 # 制限事項
-このカスタム Check には以下の制限事項があります。
+この Custom Check には以下の制限事項があります。
 
 - オンデマンドインスタンス数は、稼働中のインスタンスと有効なリザーブドインスタンス数との差分で求めています
     - なので、請求額と完全に一致しない場合があります
