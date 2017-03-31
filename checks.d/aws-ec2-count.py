@@ -127,7 +127,7 @@ class AwsEc2Count(AgentCheck):
                     # exclude SpotInstance
                     if running_instance.get('SpotInstanceRequestId'):
                         next
-                    # exclude 'Windows'
+                    # exclude not 'Linux/UNIX' Platform
                     if running_instance.get('Platform'):
                         next
 
@@ -156,6 +156,16 @@ class AwsEc2Count(AgentCheck):
         )
 
         for reserved_instance in reserved_instances['ReservedInstances']:
+            # exclude processing status
+            modify_requests = ec2.describe_reserved_instances_modifications(
+                Filters = [
+                    { 'Name' : 'status',                'Values' : [ 'processing' ] },
+                    { 'Name' : 'reserved-instances-id', 'Values' : [ reserved_instance['ReservedInstancesId'] ] },
+                ],
+            )
+            if len(modify_requests['ReservedInstancesModifications']) >= 1:
+                continue
+
             instances.add_instance_count(
                 reserved_instance['AvailabilityZone'],
                 reserved_instance['InstanceType'],
