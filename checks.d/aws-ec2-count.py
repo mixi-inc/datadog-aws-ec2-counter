@@ -54,9 +54,9 @@ class Instances():
         for az in self.get_availability_zones():
             for instance_type in self.get_instance_types(az):
                 instance = {
-                    'availability_zone': az,
-                    'instance_type'    : instance_type,
-                    'count'            : self.get_instance_count(az, instance_type),
+                    'availability_zone' : az,
+                    'instance_type'     : instance_type,
+                    'count'             : self.get_instance_count(az, instance_type),
                 }
                 instances.append(instance)
 
@@ -103,7 +103,7 @@ class AwsEc2Count(AgentCheck):
         self.gauge(
             prefix + metric,
             count,
-            tags=[
+            tags = [
                 'ac-availability-zone:%s' % az,
                 'ac-instance-type:%s'     % instance_type
             ]
