@@ -126,10 +126,10 @@ class AwsEc2Count(AgentCheck):
                 for running_instance in reservation['Instances']:
                     # exclude SpotInstance
                     if running_instance.get('SpotInstanceRequestId'):
-                        next
+                        continue
                     # exclude not 'Linux/UNIX' Platform
                     if running_instance.get('Platform'):
-                        next
+                        continue
 
                     instances.incr_instance_count(
                         running_instance['Placement']['AvailabilityZone'],
