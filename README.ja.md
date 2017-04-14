@@ -1,4 +1,4 @@
-# datadog-aws-ec2-count
+# datadog-aws-ec2-counter
 AWS の EC2 のオンデマンドインスタンスの稼働状況を Datadog のカスタムメトリクスで取得するための Datadog Custom Check です。
 
 この Custom Check で取得できる情報は以下になります。
@@ -53,16 +53,16 @@ $ sudo /opt/datadog-agent/embedded/bin/pip install boto3
 ```
 
 ## 2. カスタム Check のインストール
-このリポジトリの `checks.d/aws-ec2-count.py` を `/etc/dd-agent/checks.d/` に配置します。
+このリポジトリの `checks.d/aws_ec2_count.py` を `/etc/dd-agent/checks.d/` に配置します。
 
 ```bash
-$ sudo cp ./checks.d/aws-ec2-count.py /etc/dd-agent/checks.d/
+$ sudo cp ./checks.d/aws_ec2_count.py /etc/dd-agent/checks.d/
 ```
 
 ## 3. カスタム Check の設定ファイルの配置
-このリポジトリの `conf.d/aws-ec2-count.yaml.example` を参考に、 `/etc/dd-agent/conf.d/aws-ec2-count.yaml` を作成します。
+このリポジトリの `conf.d/aws_ec2_count.yaml.example` を参考に、 `/etc/dd-agent/conf.d/aws_ec2_count.yaml` を作成します。
 
-```yaml:aws-ec2-count.yaml
+```yaml:aws_ec2_count.yaml
 init_config:
     min_collection_interval: 60
 
@@ -73,10 +73,10 @@ instances:
 - min_collection_interval にはチェック間隔（秒数）を指定します
 - region には、チェックを行うリージョンを記述します。複数リージョンを取得するには instances に配列で指定します。
 
-取得対象が東京リージョンであれば、この `aws-ec2-count.yaml.example` をそのまま利用すれば良いでしょう。
+取得対象が東京リージョンであれば、この `aws_ec2_count.yaml.example` をそのまま利用すれば良いでしょう。
 
 ```bash
-$ sudo cp conf.d/aws-ec2-count.yaml.example /etc/dd-agent/conf.d/aws-ec2-count.yaml
+$ sudo cp conf.d/aws_ec2_count.yaml.example /etc/dd-agent/conf.d/aws_ec2_count.yaml
 ```
 
 ## 4. Datadog Agent の再起動
