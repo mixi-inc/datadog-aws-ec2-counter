@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/mounemoi/datadog-aws-ec2-counter.svg?branch=master)](https://travis-ci.org/mounemoi/datadog-aws-ec2-counter)
+
 # datadog-aws-ec2-counter
 AWS の EC2 のオンデマンドインスタンスの稼働状況を Datadog のカスタムメトリクスで取得するための Datadog Custom Check です。
 
