@@ -1,0 +1,2 @@
+class AgentCheck():
+    pass

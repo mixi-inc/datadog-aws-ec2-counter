@@ -1,4 +1,3 @@
-import boto3
 from checks import AgentCheck
 from boto3.session import Session
 
