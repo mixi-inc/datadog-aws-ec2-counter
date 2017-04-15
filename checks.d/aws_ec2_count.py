@@ -1,56 +1,173 @@
 from checks import AgentCheck
 from boto3.session import Session
+from collections import OrderedDict
+
+class NormalizationFactor():
+    # Normalization Factor
+    # - http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ri-modification-instancemove.html
+    __nf = OrderedDict()
+    __nf['nano']     =   0.25
+    __nf['micro']    =   0.5
+    __nf['small']    =   1.0
+    __nf['medium']   =   2.0
+    __nf['large']    =   4.0
+    __nf['xlarge']   =   8.0
+    __nf['2xlarge']  =  16.0
+    __nf['4xlarge']  =  32.0
+    __nf['8xlarge']  =  64.0
+    __nf['10xlarge'] =  80.0
+    __nf['16xlarge'] = 128.0
+    __nf['32xlarge'] = 256.0
+
+    @classmethod
+    def get_sorted_all_sizes(cls):
+        return cls.__nf.keys()
+
+    @classmethod
+    def get_value(cls, size):
+        if size not in cls.__nf:
+            raise TypeError('unknown instance size : %s' % size)
+
+        return cls.__nf[size]
+
+class InstanceCounter():
+    def __init__(self, nf, count=0.0):
+        self.__nf    = float(nf)
+        self.__count = float(count)
+
+    def get_count(self):
+        return self.__count
+
+    def set_count(self, count):
+        self.__count = float(count)
+        return self.__count
+
+    def add_count(self, count):
+        self.__count += float(count)
+        return self.__count
+
+    def incr_count(self):
+        return self.add_count(1.0)
+
+    def get_footprint(self):
+        return self.__count * self.__nf
+
+    def set_footprint(self, footprint):
+        self.__count = float(footprint) / self.__nf
+        return footprint
 
 class Instances():
     def __init__(self):
         self.__instances = {}
 
-    def get_availability_zones(self):
-        return self.__instances.keys()
-
-    def add_availability_zone(self, name):
-        if not self.__instances.get(name):
-            self.__instances[name] = {}
-
-    def get_instance_count(self, az, instance_type):
-        if self.__instances.get(az) and self.__instances[az].get(instance_type):
-            return self.__instances[az][instance_type]
-
-        return 0
-
-    def set_instance_count(self, az, instance_type, count):
-        self.add_availability_zone(az)
-        self.__instances[az][instance_type] = count
-        return self.__instances[az][instance_type]
-
-    def add_instance_count(self, az, instance_type, count):
-        self.add_availability_zone(az)
-
-        if not self.__instances[az].get(instance_type):
-            self.__instances[az][instance_type] = count
-        else:
-            self.__instances[az][instance_type] += count
-
-        return self.__instances[az][instance_type]
-
-    def incr_instance_count(self, az, instance_type):
-        return self.add_instance_count(az, instance_type, 1)
-
-    def has_instance_type(self, az, instance_type):
-        if self.__instances.get(az) and self.__instances[az].get(instance_type):
+    def has_az(self, az):
+        if az in self.__instances:
             return True
 
         return False
 
-    def get_instance_types(self, az):
-        if not self.__instances.get(az):
+    def add_az(self, az):
+        if not self.has_az(az):
+            self.__instances[az] = {}
+
+    def get_all_azs(self):
+        return sorted(self.__instances.keys())
+
+    def has_family(self, az, family):
+        if self.has_az(az) and (family in self.__instances[az]):
+            return True
+
+        return False
+
+    def add_family(self, az, family):
+        if not self.has_family(az, family):
+            self.add_az(az)
+            self.__instances[az][family] = {}
+
+    def get_all_families(self, az):
+        if not self.has_az(az):
             return []
 
-        return self.__instances[az].keys()
+        return sorted(self.__instances[az].keys())
+
+    def get_all_sizes(self, az, family):
+        sizes = []
+        for size in NormalizationFactor.get_sorted_all_sizes():
+            if self.has(az, family, size):
+                sizes.append(size)
+
+        return sizes
+
+    def has(self, az, family, size):
+        if self.has_az(az) \
+            and self.has_family(az, family) \
+            and (size in self.__instances[az][family]):
+                return True
+
+        return False
+
+    def get(self, az, family, size):
+        if not self.has(az, family, size):
+            self.add_family(az, family)
+            self.__instances[az][family][size] = InstanceCounter(NormalizationFactor.get_value(size))
+
+        return self.__instances[az][family][size]
+
+    def dump(self):
+        instances = []
+
+        for az in self.get_all_azs():
+            for family in self.get_all_families(az):
+                for size in self.get_all_sizes(az, family):
+                    instance = self.get(az, family, size)
+                    instances.append({
+                        'az'        : az,
+                        'itype'     : '%s.%s' % (family, size),
+                        'family'    : family,
+                        'size'      : size,
+                        'count'     : instance.get_count(),
+                        'footprint' : instance.get_footprint(),
+                    })
+
+        return instances
+
+    # duplicated -----
+    def get_instance_count(self, az, itype):
+        family, size = itype.split('.', 1)
+        if not self.has(az, family, size):
+            return 0
+
+        return self.get(az, family, size).get_count()
+
+    def set_instance_count(self, az, itype, count):
+        family, size = itype.split('.', 1)
+        return self.get(az, family, size).set_count(count)
+
+    def add_instance_count(self, az, itype, count):
+        family, size = itype.split('.', 1)
+        return self.get(az, family, size).add_count(count)
+
+    def incr_instance_count(self, az, itype):
+        return self.add_instance_count(az, itype, 1)
+
+    def has_instance_type(self, az, itype):
+        family, size = itype.split('.', 1)
+        return self.has(az, family, size)
+
+    def get_instance_types(self, az):
+        if not self.has_az(az):
+            return []
+
+        instance_types = []
+        for family in self.__instances[az].keys():
+            for size in self.__instances[az][family].keys():
+                instance_types.append('%s.%s' % (family, size))
+
+        return instance_types
 
     def get_instances(self):
         instances = []
-        for az in self.get_availability_zones():
+        for az in self.get_all_az():
             for instance_type in self.get_instance_types(az):
                 instance = {
                     'availability_zone' : az,
@@ -176,7 +293,7 @@ class AwsEc2Count(AgentCheck):
     def __get_ondemand_instances(self, running_instances, reserved_instances):
         instances = Instances()
 
-        for az in reserved_instances.get_availability_zones():
+        for az in reserved_instances.get_all_az():
             for instance_type in reserved_instances.get_instance_types(az):
                 instances.set_instance_count(
                     az,
@@ -184,7 +301,7 @@ class AwsEc2Count(AgentCheck):
                     -1 * reserved_instances.get_instance_count(az, instance_type),
                 )
 
-        for az in running_instances.get_availability_zones():
+        for az in running_instances.get_all_az():
             for instance_type in running_instances.get_instance_types(az):
                 instances.add_instance_count(
                     az,
