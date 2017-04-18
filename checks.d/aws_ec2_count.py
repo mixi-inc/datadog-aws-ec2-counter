@@ -153,49 +153,6 @@ class Instances():
             })
         return instances
 
-    # duplicated -----
-    def get_instance_count(self, az, itype):
-        if not self.has_itype(az, itype):
-            return 0
-
-        return self.get_itype(az, itype).get_count()
-
-    def set_instance_count(self, az, itype, count):
-        return self.get_itype(az, itype).set_count(count)
-
-    def add_instance_count(self, az, itype, count):
-        return self.get_itype(az, itype).add_count(count)
-
-    def incr_instance_count(self, az, itype):
-        return self.add_instance_count(az, itype, 1)
-
-    def has_instance_type(self, az, itype):
-        return self.has_itype(az, itype)
-
-    def get_instance_types(self, az):
-        if not self.has_az(az):
-            return []
-
-        instance_types = []
-        for family in self.__instances[az].keys():
-            for size in self.__instances[az][family].keys():
-                instance_types.append('%s.%s' % (family, size))
-
-        return instance_types
-
-    def get_instances(self):
-        instances = []
-        for az in self.get_all_azs():
-            for instance_type in self.get_instance_types(az):
-                instance = {
-                    'availability_zone' : az,
-                    'instance_type'     : instance_type,
-                    'count'             : self.get_instance_count(az, instance_type),
-                }
-                instances.append(instance)
-
-        return instances
-
 class OndemandInstances():
     def __init__(self, running_instances, reserved_instances):
         ondemand_instances = Instance()
@@ -255,31 +212,30 @@ class AwsEc2Count(AgentCheck):
         ec2 = session.client('ec2')
 
         running_instances = self.__get_running_instances(ec2)
-        self.log.info('running_instances')
-        for instance in running_instances.get_instances():
-            az, instance_type, count = instance['availability_zone'], instance['instance_type'], instance['count']
-            self.log.info('%s : %s = %s' % (az, instance_type, count))
-            self.__send_gauge('running.count', az, instance_type, count)
+        self.__send_instance_info('running.count', running_instances)
 
         reserved_instances = self.__get_reserved_instances(ec2)
-        self.log.info('reserved_instances')
-        for instance in reserved_instances.get_instances():
-            az, instance_type, count = instance['availability_zone'], instance['instance_type'], instance['count']
-            self.log.info('%s : %s = %s' % (az, instance_type, count))
-            self.__send_gauge('reserved.count', az, instance_type, count)
+        self.__send_instance_info('reserved.count', reserved_instances)
 
         ondemand_instances = self.__get_ondemand_instances(running_instances, reserved_instances)
         self.log.info('ondemand_instances')
-        for instance in ondemand_instances.get_instances():
-            az, instance_type, count = instance['availability_zone'], instance['instance_type'], instance['count']
-            self.log.info('%s : %s = %s' % (az, instance_type, count))
+        for instance in ondemand_instances.dump():
+            az, itype, count = instance['az'], instance['itype'], instance['count']
+            self.log.info('%s : %s = %s' % (az, itype, count))
             if count >= 0:
-                self.__send_gauge('ondemand.count', az, instance_type, count)
-                if reserved_instances.has_instance_type(az, instance_type):
-                    self.__send_gauge('reserved.unused', az, instance_type, 0)
+                self.__send_gauge('ondemand.count', az, itype, count)
+                if reserved_instances.has_itype(az, itype):
+                    self.__send_gauge('reserved.unused', az, itype, 0)
             else:
-                self.__send_gauge('ondemand.count', az, instance_type, 0)
-                self.__send_gauge('reserved.unused', az, instance_type, abs(count))
+                self.__send_gauge('ondemand.count', az, itype, 0)
+                self.__send_gauge('reserved.unused', az, itype, abs(count))
+
+    def __send_instance_info(self, label, instances):
+        self.log.info(label)
+        for instance in instances.dump():
+            az, itype, count = instance['az'], instance['itype'], instance['count']
+            self.log.info('%s : %s = %s' % (az, itype, count))
+            self.__send_gauge(label, az, itype, count)
 
     def __send_gauge(self, metric, az, instance_type, count):
         prefix = 'aws_ec2_count_1.'
@@ -314,10 +270,10 @@ class AwsEc2Count(AgentCheck):
                     if running_instance.get('Platform'):
                         continue
 
-                    instances.incr_instance_count(
+                    instances.get_itype(
                         running_instance['Placement']['AvailabilityZone'],
                         running_instance['InstanceType'],
-                    )
+                    ).incr_count()
 
             if running_instances.get('NextToken'):
                 next_token = running_instances['NextToken']
@@ -349,32 +305,21 @@ class AwsEc2Count(AgentCheck):
             if len(modify_requests['ReservedInstancesModifications']) >= 1:
                 continue
 
-            instances.add_instance_count(
+            instances.get_itype(
                 reserved_instance['AvailabilityZone'],
                 reserved_instance['InstanceType'],
-                reserved_instance['InstanceCount'],
-            )
+            ).add_count(reserved_instance['InstanceCount'])
 
         return instances
 
     def __get_ondemand_instances(self, running_instances, reserved_instances):
         instances = Instances()
 
-        for az in reserved_instances.get_all_azs():
-            for instance_type in reserved_instances.get_instance_types(az):
-                instances.set_instance_count(
-                    az,
-                    instance_type,
-                    -1 * reserved_instances.get_instance_count(az, instance_type),
-                )
+        for instance in reserved_instances.get_all_instances():
+            instances.get(instance['az'], instance['family'], instance['size']).set_count(-1 * instance['counter'].get_count())
 
-        for az in running_instances.get_all_azs():
-            for instance_type in running_instances.get_instance_types(az):
-                instances.add_instance_count(
-                    az,
-                    instance_type,
-                    running_instances.get_instance_count(az, instance_type),
-                )
+        for instance in running_instances.get_all_instances():
+            instances.get(instance['az'], instance['family'], instance['size']).add_count(instance['counter'].get_count())
 
         return instances
 
