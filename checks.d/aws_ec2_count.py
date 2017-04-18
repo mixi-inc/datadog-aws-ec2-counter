@@ -222,9 +222,9 @@ class InstanceFetcher():
 
         return instances
 
-    def get_ondemand_instances(self):
-        ondemand_instances = Instance()
-        unused_instances   = Instance()
+    def get_ondemand_instances(self, running_instances, reserved_instances):
+        ondemand_instances = Instances()
+        unused_instances   = Instances()
 
         for reserved in reserved_instances.get_all_instances(az='region'):
             unused_instances.get(
@@ -236,7 +236,7 @@ class InstanceFetcher():
             count = running['counter'].get_count()
 
             if reserved_instances.has(az, family, size):
-                count -= reserved_instances.get(az, family, size)
+                count -= reserved_instances.get(az, family, size).get_count()
 
             if count <= 0.0:
                 ondemand_instances.get(az, family, size).set_count(0.0)
@@ -267,7 +267,7 @@ class InstanceFetcher():
                     ondemand.set_footprint(0.0)
                     unused['counter'].set_footprint(unused['counter'].get_footprint() - ondemand.get_footrpint())
 
-        return ondemand_instances, reserved_instances
+        return ondemand_instances, unused_instances
 
 class AwsEc2Count(AgentCheck):
     def check(self, instance):
@@ -283,18 +283,9 @@ class AwsEc2Count(AgentCheck):
         reserved_instances = fetcher.get_reserved_instances()
         self.__send_instance_info('reserved.count', reserved_instances)
 
-        ondemand_instances = self.__get_ondemand_instances(running_instances, reserved_instances)
-        self.log.info('ondemand_instances')
-        for instance in ondemand_instances.dump():
-            az, itype, count = instance['az'], instance['itype'], instance['count']
-            self.log.info('%s : %s = %s' % (az, itype, count))
-            if count >= 0:
-                self.__send_gauge('ondemand.count', az, itype, count)
-                if reserved_instances.has_itype(az, itype):
-                    self.__send_gauge('reserved.unused', az, itype, 0)
-            else:
-                self.__send_gauge('ondemand.count', az, itype, 0)
-                self.__send_gauge('reserved.unused', az, itype, abs(count))
+        ondemand_instances, unused_instances = fetcher.get_ondemand_instances(running_instances, reserved_instances)
+        self.__send_instance_info('ondemand.count', ondemand_instances)
+        self.__send_instance_info('reserved.unused', unused_instances)
 
     def __send_instance_info(self, label, instances):
         self.log.info(label)
@@ -313,15 +304,4 @@ class AwsEc2Count(AgentCheck):
                 'ac-instance-type:%s'     % instance_type
             ]
         )
-
-    def __get_ondemand_instances(self, running_instances, reserved_instances):
-        instances = Instances()
-
-        for instance in reserved_instances.get_all_instances():
-            instances.get(instance['az'], instance['family'], instance['size']).set_count(-1 * instance['counter'].get_count())
-
-        for instance in running_instances.get_all_instances():
-            instances.get(instance['az'], instance['family'], instance['size']).add_count(instance['counter'].get_count())
-
-        return instances
 
