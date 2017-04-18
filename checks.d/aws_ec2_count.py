@@ -153,8 +153,76 @@ class Instances():
             })
         return instances
 
-class OndemandInstances():
-    def __init__(self, running_instances, reserved_instances):
+class InstanceFetcher():
+    def __init__(self, region):
+        session = Session(region_name = region)
+        self.__ec2 = session.client('ec2')
+
+    def get_running_instances(self):
+        instances = Instances()
+        next_token = ''
+        while True:
+            running_instances = self.__ec2.describe_instances(
+                Filters = [
+                    { 'Name' : 'instance-state-name', 'Values' : [ 'running' ] },
+                    { 'Name' : 'tenancy',             'Values' : [ 'default' ] },
+                ],
+                MaxResults = 100,
+                NextToken = next_token,
+            )
+
+            for reservation in running_instances['Reservations']:
+                for running_instance in reservation['Instances']:
+                    # exclude SpotInstance
+                    if 'SpotInstanceRequestId' in running_instance:
+                        continue
+                    # exclude not 'Linux/UNIX' Platform
+                    if 'Platform' in running_instance:
+                        continue
+
+                    instances.get_itype(
+                        running_instance['Placement']['AvailabilityZone'],
+                        running_instance['InstanceType'],
+                    ).incr_count()
+
+            if 'NextToken' in running_instances:
+                next_token = running_instances['NextToken']
+            else:
+                break
+
+        return instances
+
+    def get_reserved_instances(self):
+        instances = Instances()
+
+        reserved_instances = self.__ec2.describe_reserved_instances(
+            Filters = [
+                { 'Name' : 'state',               'Values' : [ 'active' ] },
+                { 'Name' : 'scope',               'Values' : [ 'Availability Zone' ] },
+                { 'Name' : 'product-description', 'Values' : [ 'Linux/UNIX' ] },
+                { 'Name' : 'instance-tenancy',    'Values' : [ 'default' ] },
+            ],
+        )
+
+        for reserved_instance in reserved_instances['ReservedInstances']:
+            # exclude processing status
+            modify_requests = self.__ec2.describe_reserved_instances_modifications(
+                Filters = [
+                    { 'Name' : 'status',                'Values' : [ 'processing' ] },
+                    { 'Name' : 'reserved-instances-id', 'Values' : [ reserved_instance['ReservedInstancesId'] ] },
+                ],
+            )
+            if len(modify_requests['ReservedInstancesModifications']) >= 1:
+                continue
+
+            instances.get_itype(
+                reserved_instance['AvailabilityZone'],
+                reserved_instance['InstanceType'],
+            ).add_count(reserved_instance['InstanceCount'])
+
+        return instances
+
+    def get_ondemand_instances(self):
         ondemand_instances = Instance()
         unused_instances   = Instance()
 
@@ -199,22 +267,20 @@ class OndemandInstances():
                     ondemand.set_footprint(0.0)
                     unused['counter'].set_footprint(unused['counter'].get_footprint() - ondemand.get_footrpint())
 
-        self.ondemand        = ondemand_instances
-        self.reserved_unused = reserved_instances
+        return ondemand_instances, reserved_instances
 
 class AwsEc2Count(AgentCheck):
     def check(self, instance):
-        if not instance.get('region'):
+        if not 'region' in instance:
             self.log.error('no region')
             return
 
-        session = Session(region_name = instance['region'])
-        ec2 = session.client('ec2')
+        fetcher = InstanceFetcher(instance['region'])
 
-        running_instances = self.__get_running_instances(ec2)
+        running_instances = fetcher.get_running_instances()
         self.__send_instance_info('running.count', running_instances)
 
-        reserved_instances = self.__get_reserved_instances(ec2)
+        reserved_instances = fetcher.get_reserved_instances()
         self.__send_instance_info('reserved.count', reserved_instances)
 
         ondemand_instances = self.__get_ondemand_instances(running_instances, reserved_instances)
@@ -247,70 +313,6 @@ class AwsEc2Count(AgentCheck):
                 'ac-instance-type:%s'     % instance_type
             ]
         )
-
-    def __get_running_instances(self, ec2):
-        instances = Instances()
-        next_token = ''
-        while True:
-            running_instances = ec2.describe_instances(
-                Filters = [
-                    { 'Name' : 'instance-state-name', 'Values' : [ 'running' ] },
-                    { 'Name' : 'tenancy',             'Values' : [ 'default' ] },
-                ],
-                MaxResults = 100,
-                NextToken = next_token,
-            )
-
-            for reservation in running_instances['Reservations']:
-                for running_instance in reservation['Instances']:
-                    # exclude SpotInstance
-                    if running_instance.get('SpotInstanceRequestId'):
-                        continue
-                    # exclude not 'Linux/UNIX' Platform
-                    if running_instance.get('Platform'):
-                        continue
-
-                    instances.get_itype(
-                        running_instance['Placement']['AvailabilityZone'],
-                        running_instance['InstanceType'],
-                    ).incr_count()
-
-            if running_instances.get('NextToken'):
-                next_token = running_instances['NextToken']
-            else:
-                break
-
-        return instances
-
-    def __get_reserved_instances(self, ec2):
-        instances = Instances()
-
-        reserved_instances = ec2.describe_reserved_instances(
-            Filters = [
-                { 'Name' : 'state',               'Values' : [ 'active' ] },
-                { 'Name' : 'scope',               'Values' : [ 'Availability Zone' ] },
-                { 'Name' : 'product-description', 'Values' : [ 'Linux/UNIX' ] },
-                { 'Name' : 'instance-tenancy',    'Values' : [ 'default' ] },
-            ],
-        )
-
-        for reserved_instance in reserved_instances['ReservedInstances']:
-            # exclude processing status
-            modify_requests = ec2.describe_reserved_instances_modifications(
-                Filters = [
-                    { 'Name' : 'status',                'Values' : [ 'processing' ] },
-                    { 'Name' : 'reserved-instances-id', 'Values' : [ reserved_instance['ReservedInstancesId'] ] },
-                ],
-            )
-            if len(modify_requests['ReservedInstancesModifications']) >= 1:
-                continue
-
-            instances.get_itype(
-                reserved_instance['AvailabilityZone'],
-                reserved_instance['InstanceType'],
-            ).add_count(reserved_instance['InstanceCount'])
-
-        return instances
 
     def __get_ondemand_instances(self, running_instances, reserved_instances):
         instances = Instances()
