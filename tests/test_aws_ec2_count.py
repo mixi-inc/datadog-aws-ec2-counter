@@ -157,34 +157,6 @@ class TestInstances(unittest.TestCase):
             { 'az': 'region-1b', 'itype': 't2.micro',  'family': 't2', 'size': 'micro',  'count': 5.0, 'footprint':  2.5 },
         ])
 
-    # duplicated -------
-    def test_instance_count(self):
-        instances = aws_ec2_count.Instances()
-
-        self.assertFalse(instances.has_instance_type('region-1a', 'm3.large'))
-        self.assertEqual(instances.get_instance_count('region-1a', 'm3.large'), 0.0)
-        self.assertEqual(instances.set_instance_count('region-1a', 'm3.large', 5), 5.0)
-        self.assertEqual(instances.get_instance_count('region-1a', 'm3.large'), 5.0)
-        self.assertEqual(instances.add_instance_count('region-1a', 'm3.large', 3), 8.0)
-        self.assertEqual(instances.get_instance_count('region-1a', 'm3.large'), 8.0)
-        self.assertEqual(instances.incr_instance_count('region-1a', 'm3.large'), 9.0)
-        self.assertEqual(instances.get_instance_count('region-1a', 'm3.large'), 9.0)
-        self.assertTrue(instances.has_instance_type('region-1a', 'm3.large'))
-
-        self.assertFalse(instances.has_instance_type('region-1a', 'm4.large'))
-        self.assertEqual(instances.add_instance_count('region-1a', 'm4.large', 3), 3.0)
-        self.assertEqual(instances.get_instance_count('region-1a', 'm4.large'), 3.0)
-        self.assertTrue(instances.has_instance_type('region-1a', 'm4.large'))
-
-        self.assertFalse(instances.has_instance_type('region-1b', 'm5.large'))
-        self.assertEqual(instances.incr_instance_count('region-1b', 'm5.large'), 1.0)
-        self.assertEqual(instances.get_instance_count('region-1b', 'm5.large'), 1.0)
-        self.assertTrue(instances.has_instance_type('region-1b', 'm5.large'))
-
-        self.assertEqual(sorted(instances.get_instance_types('region-1a')), ['m3.large', 'm4.large'])
-        self.assertEqual(sorted(instances.get_instance_types('region-1b')), ['m5.large'])
-        self.assertEqual(sorted(instances.get_instance_types('region-1c')), [])
-
 class TestAWSEC2InstanceCounter(unittest.TestCase):
     def test_dummy(self):
         self.assertTrue(True)
