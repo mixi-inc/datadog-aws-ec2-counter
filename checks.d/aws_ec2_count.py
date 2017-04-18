@@ -185,7 +185,7 @@ class Instances():
 
     def get_instances(self):
         instances = []
-        for az in self.get_all_az():
+        for az in self.get_all_azs():
             for instance_type in self.get_instance_types(az):
                 instance = {
                     'availability_zone' : az,
@@ -282,7 +282,7 @@ class AwsEc2Count(AgentCheck):
                 self.__send_gauge('reserved.unused', az, instance_type, abs(count))
 
     def __send_gauge(self, metric, az, instance_type, count):
-        prefix = 'aws_ec2_count.'
+        prefix = 'aws_ec2_count_1.'
         self.gauge(
             prefix + metric,
             count,
@@ -360,7 +360,7 @@ class AwsEc2Count(AgentCheck):
     def __get_ondemand_instances(self, running_instances, reserved_instances):
         instances = Instances()
 
-        for az in reserved_instances.get_all_az():
+        for az in reserved_instances.get_all_azs():
             for instance_type in reserved_instances.get_instance_types(az):
                 instances.set_instance_count(
                     az,
@@ -368,7 +368,7 @@ class AwsEc2Count(AgentCheck):
                     -1 * reserved_instances.get_instance_count(az, instance_type),
                 )
 
-        for az in running_instances.get_all_az():
+        for az in running_instances.get_all_azs():
             for instance_type in running_instances.get_instance_types(az):
                 instances.add_instance_count(
                     az,
