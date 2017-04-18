@@ -95,6 +95,50 @@ class TestInstances(unittest.TestCase):
         parts = instances.get_all_sizes('region-1a', 'c3')
         self.assertEqual(parts, ['large', 'xlarge', '2xlarge', '4xlarge'])
 
+    def test_get_all_instances(self):
+        instances = aws_ec2_count.Instances()
+        instances.get('region-1a', 'm3', 'medium').set_count(5)
+        instances.get('region-1a', 'm3', 'large').set_count(5)
+        instances.get('region-1a', 'm4', 'large').set_count(5)
+        instances.get('region-1b', 'c3', 'large').set_count(5)
+        instances.get('region-1b', 'c3', 'xlarge').set_count(5)
+        instances.get('region-1b', 't2', 'micro').set_count(5)
+
+        patterns= [
+            { 'az': 'region-1a', 'family': 'm3', 'size': 'medium', 'count': 5.0, 'footprint': 10.0 },
+            { 'az': 'region-1a', 'family': 'm3', 'size': 'large',  'count': 5.0, 'footprint': 20.0 },
+            { 'az': 'region-1a', 'family': 'm4', 'size': 'large',  'count': 5.0, 'footprint': 20.0 },
+            { 'az': 'region-1b', 'family': 'c3', 'size': 'large',  'count': 5.0, 'footprint': 20.0 },
+            { 'az': 'region-1b', 'family': 'c3', 'size': 'xlarge', 'count': 5.0, 'footprint': 40.0 },
+            { 'az': 'region-1b', 'family': 't2', 'size': 'micro',  'count': 5.0, 'footprint':  2.5 },
+        ]
+        for instance in instances.get_all_instances():
+            pattern = patterns.pop(0)
+            for key in instance.keys():
+                if key == 'az' or key == 'family' or key == 'size':
+                    self.assertEqual(instance[key], pattern[key])
+                else:
+                    self.assertEqual(key, 'counter')
+                    self.assertTrue(isinstance(instance[key], aws_ec2_count.InstanceCounter))
+                    self.assertEqual(instance[key].get_count(), pattern['count'])
+                    self.assertEqual(instance[key].get_footprint(), pattern['footprint'])
+
+        patterns= [
+            { 'az': 'region-1a', 'family': 'm3', 'size': 'medium', 'count': 5.0, 'footprint': 10.0 },
+            { 'az': 'region-1a', 'family': 'm3', 'size': 'large',  'count': 5.0, 'footprint': 20.0 },
+            { 'az': 'region-1a', 'family': 'm4', 'size': 'large',  'count': 5.0, 'footprint': 20.0 },
+        ]
+        for instance in instances.get_all_instances(az='region-1a'):
+            pattern = patterns.pop(0)
+            for key in instance.keys():
+                if key == 'az' or key == 'family' or key == 'size':
+                    self.assertEqual(instance[key], pattern[key])
+                else:
+                    self.assertEqual(key, 'counter')
+                    self.assertTrue(isinstance(instance[key], aws_ec2_count.InstanceCounter))
+                    self.assertEqual(instance[key].get_count(), pattern['count'])
+                    self.assertEqual(instance[key].get_footprint(), pattern['footprint'])
+
     def test_dump(self):
         instances = aws_ec2_count.Instances()
         instances.get('region-1a', 'm3', 'medium').set_count(5)
@@ -113,6 +157,7 @@ class TestInstances(unittest.TestCase):
             { 'az': 'region-1b', 'itype': 't2.micro',  'family': 't2', 'size': 'micro',  'count': 5.0, 'footprint':  2.5 },
         ])
 
+    # duplicated -------
     def test_instance_count(self):
         instances = aws_ec2_count.Instances()
 

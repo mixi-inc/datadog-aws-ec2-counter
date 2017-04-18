@@ -106,6 +106,10 @@ class Instances():
 
         return False
 
+    def has_itype(self, az, itype):
+        family, size = itype.split('.', 1)
+        return self.has(az, family, size)
+
     def get(self, az, family, size):
         if not self.has(az, family, size):
             self.add_family(az, family)
@@ -113,46 +117,60 @@ class Instances():
 
         return self.__instances[az][family][size]
 
-    def dump(self):
-        instances = []
+    def get_itype(self, az, itype):
+        family, size = itype.split('.', 1)
+        return self.get(az, family, size)
 
-        for az in self.get_all_azs():
+    def get_all_instances(self, az=None):
+        azs = None
+        if az is None:
+            azs = self.get_all_azs()
+        else:
+            azs = [ az ]
+
+        instances = []
+        for az in azs:
             for family in self.get_all_families(az):
                 for size in self.get_all_sizes(az, family):
-                    instance = self.get(az, family, size)
                     instances.append({
-                        'az'        : az,
-                        'itype'     : '%s.%s' % (family, size),
-                        'family'    : family,
-                        'size'      : size,
-                        'count'     : instance.get_count(),
-                        'footprint' : instance.get_footprint(),
+                        'az'      : az,
+                        'family'  : family,
+                        'size'    : size,
+                        'counter' : self.get(az, family, size),
                     })
+        return instances
 
+    def dump(self):
+        instances = []
+        for instance in self.get_all_instances():
+            instances.append({
+                'az'        : instance['az'],
+                'itype'     : '%s.%s' % (instance['family'], instance['size']),
+                'family'    : instance['family'],
+                'size'      : instance['size'],
+                'count'     : instance['counter'].get_count(),
+                'footprint' : instance['counter'].get_footprint(),
+            })
         return instances
 
     # duplicated -----
     def get_instance_count(self, az, itype):
-        family, size = itype.split('.', 1)
-        if not self.has(az, family, size):
+        if not self.has_itype(az, itype):
             return 0
 
-        return self.get(az, family, size).get_count()
+        return self.get_itype(az, itype).get_count()
 
     def set_instance_count(self, az, itype, count):
-        family, size = itype.split('.', 1)
-        return self.get(az, family, size).set_count(count)
+        return self.get_itype(az, itype).set_count(count)
 
     def add_instance_count(self, az, itype, count):
-        family, size = itype.split('.', 1)
-        return self.get(az, family, size).add_count(count)
+        return self.get_itype(az, itype).add_count(count)
 
     def incr_instance_count(self, az, itype):
         return self.add_instance_count(az, itype, 1)
 
     def has_instance_type(self, az, itype):
-        family, size = itype.split('.', 1)
-        return self.has(az, family, size)
+        return self.has_itype(az, itype)
 
     def get_instance_types(self, az):
         if not self.has_az(az):
@@ -177,6 +195,55 @@ class Instances():
                 instances.append(instance)
 
         return instances
+
+class OndemandInstances():
+    def __init__(self, running_instances, reserved_instances):
+        ondemand_instances = Instance()
+        unused_instances   = Instance()
+
+        for reserved in reserved_instances.get_all_instances(az='region'):
+            unused_instances.get(
+                'region', reserved['family'], reserved['size']
+            ).set_count(reserved['counter'].get_count())
+
+        for running in running_instances.get_all_instances():
+            az, family, size = running['az'], running['family'], running['size']
+            count = running['counter'].get_count()
+
+            if reserved_instances.has(az, family, size):
+                count -= reserved_instances.get(az, family, size)
+
+            if count <= 0.0:
+                ondemand_instances.get(az, family, size).set_count(0.0)
+                unused_instances.get(az, family, size).set_count(abs(count))
+            else:
+                if unused_instances.has('region', family, size):
+                    unused_counter = unused_instances.get('region', family, size)
+                    count -= unused_counter.get_count()
+                    if count <= 0.0:
+                        unused_counter.set_count(abs(count))
+                        count = 0.0
+                    else:
+                        unused_counter.set_count(0.0)
+
+                ondemand_instances.get(az, family, size).set_count(count)
+                unused_instances.get(az, family, size).set_count(0.0)
+
+        for unused in unused_instances.get_all_instances(az='region'):
+            family, size = unused['family'], unused['size']
+            if unused['counter'].get_footprint == 0.0:
+                continue
+            for ondemand in ondemand_instances.get_all_sizes('region', family):
+                if ondemand.get_footprint() >= unused['counter'].get_footprint():
+                    ondemand.set_footprint(ondemand.get_footprint() - unused['counter'].get_footprint())
+                    unused['counter'].set_footprint(0.0)
+                    break
+                else:
+                    ondemand.set_footprint(0.0)
+                    unused['counter'].set_footprint(unused['counter'].get_footprint() - ondemand.get_footrpint())
+
+        self.ondemand        = ondemand_instances
+        self.reserved_unused = reserved_instances
 
 class AwsEc2Count(AgentCheck):
     def check(self, instance):
