@@ -236,36 +236,39 @@ class InstanceFetcher():
             count = running['counter'].get_count()
 
             if reserved_instances.has(az, family, size):
+                unused_counter = unused_instances.get(az, family, size)
                 count -= reserved_instances.get(az, family, size).get_count()
+                if count <= 0.0:
+                    unused_counter.set_count(abs(count))
+                    count = 0.0
+                else:
+                    unused_counter.set_count(0)
 
-            if count <= 0.0:
-                ondemand_instances.get(az, family, size).set_count(0.0)
-                unused_instances.get(az, family, size).set_count(abs(count))
-            else:
-                if unused_instances.has('region', family, size):
-                    unused_counter = unused_instances.get('region', family, size)
-                    count -= unused_counter.get_count()
-                    if count <= 0.0:
-                        unused_counter.set_count(abs(count))
-                        count = 0.0
-                    else:
-                        unused_counter.set_count(0.0)
+            if unused_instances.has('region', family, size):
+                unused_counter = unused_instances.get('region', family, size)
+                count -= unused_counter.get_count()
+                if count <= 0.0:
+                    unused_counter.set_count(abs(count))
+                    count = 0.0
+                else:
+                    unused_counter.set_count(0)
 
-                ondemand_instances.get(az, family, size).set_count(count)
-                unused_instances.get(az, family, size).set_count(0.0)
+            ondemand_instances.get(az, family, size).set_count(count)
 
         for unused in unused_instances.get_all_instances(az='region'):
             family, size = unused['family'], unused['size']
-            if unused['counter'].get_footprint == 0.0:
+            if unused['counter'].get_footprint() == 0.0:
                 continue
-            for ondemand in ondemand_instances.get_all_sizes('region', family):
-                if ondemand.get_footprint() >= unused['counter'].get_footprint():
-                    ondemand.set_footprint(ondemand.get_footprint() - unused['counter'].get_footprint())
-                    unused['counter'].set_footprint(0.0)
-                    break
-                else:
-                    ondemand.set_footprint(0.0)
-                    unused['counter'].set_footprint(unused['counter'].get_footprint() - ondemand.get_footrpint())
+            for az in ondemand_instances.get_all_azs():
+                for size in ondemand_instances.get_all_sizes(az, family):
+                    ondemand = ondemand_instances.get(az, family, size)
+                    if ondemand.get_footprint() >= unused['counter'].get_footprint():
+                        ondemand.set_footprint(ondemand.get_footprint() - unused['counter'].get_footprint())
+                        unused['counter'].set_footprint(0.0)
+                        break
+                    else:
+                        unused['counter'].set_footprint(unused['counter'].get_footprint() - ondemand.get_footprint())
+                        ondemand.set_footprint(0.0)
 
         return ondemand_instances, unused_instances
 

@@ -157,6 +157,92 @@ class TestInstances(unittest.TestCase):
             { 'az': 'region-1b', 'itype': 't2.micro',  'family': 't2', 'size': 'micro',  'count': 5.0, 'footprint':  2.5 },
         ])
 
+class TestInstanceFetcher(unittest.TestCase):
+    def test_get_ondemand_instances(self):
+        fetcher = aws_ec2_count.InstanceFetcher('region')
+
+        # az
+        running_instances  = aws_ec2_count.Instances()
+        running_instances.get('region-1a', 'c4', 'large').set_count(5)
+        running_instances.get('region-1b', 'c4', 'large').set_count(10)
+        running_instances.get('region-1b', 'c4', 'xlarge').set_count(10)
+        reserved_instances = aws_ec2_count.Instances()
+        reserved_instances.get('region-1a', 'c4', 'large').set_count(10)
+        reserved_instances.get('region-1b', 'c4', 'large').set_count(5)
+        ondemand_instances, unused_instances = fetcher.get_ondemand_instances(running_instances, reserved_instances)
+        self.assertEqual(ondemand_instances.dump(), [
+            { 'az': 'region-1a', 'itype': 'c4.large',  'family': 'c4', 'size': 'large',  'count':  0.0, 'footprint':  0.0 },
+            { 'az': 'region-1b', 'itype': 'c4.large',  'family': 'c4', 'size': 'large',  'count':  5.0, 'footprint': 20.0 },
+            { 'az': 'region-1b', 'itype': 'c4.xlarge', 'family': 'c4', 'size': 'xlarge', 'count': 10.0, 'footprint': 80.0 },
+        ])
+        self.assertEqual(unused_instances.dump(), [
+            { 'az': 'region-1a', 'itype': 'c4.large', 'family': 'c4', 'size': 'large', 'count': 5.0, 'footprint': 20.0 },
+            { 'az': 'region-1b', 'itype': 'c4.large', 'family': 'c4', 'size': 'large', 'count': 0.0, 'footprint':  0.0 },
+        ])
+
+        # region
+        running_instances  = aws_ec2_count.Instances()
+        running_instances.get('region-1a', 'c4', 'small').set_count(1)
+        running_instances.get('region-1a', 'c4', 'medium').set_count(1)
+        running_instances.get('region-1a', 'c4', 'large').set_count(1)
+        running_instances.get('region-1b', 'c4', 'large').set_count(1)
+        reserved_instances = aws_ec2_count.Instances()
+        reserved_instances.get('region', 'c4', 'large').set_count(3)
+        ondemand_instances, unused_instances = fetcher.get_ondemand_instances(running_instances, reserved_instances)
+        self.assertEqual(ondemand_instances.dump(), [
+            { 'az': 'region-1a', 'itype': 'c4.small',  'family': 'c4', 'size': 'small',  'count': 0.0, 'footprint': 0.0 },
+            { 'az': 'region-1a', 'itype': 'c4.medium', 'family': 'c4', 'size': 'medium', 'count': 0.0, 'footprint': 0.0 },
+            { 'az': 'region-1a', 'itype': 'c4.large',  'family': 'c4', 'size': 'large',  'count': 0.0, 'footprint': 0.0 },
+            { 'az': 'region-1b', 'itype': 'c4.large',  'family': 'c4', 'size': 'large',  'count': 0.0, 'footprint': 0.0 },
+        ])
+        self.assertEqual(unused_instances.dump(), [
+            { 'az': 'region', 'itype': 'c4.large', 'family': 'c4', 'size': 'large', 'count': 0.25, 'footprint': 1.0 },
+        ])
+
+        # region
+        running_instances  = aws_ec2_count.Instances()
+        running_instances.get('region-1a', 'c4', 'small').set_count(1)
+        running_instances.get('region-1a', 'c4', 'medium').set_count(1)
+        running_instances.get('region-1a', 'c4', 'large').set_count(1)
+        running_instances.get('region-1b', 'c4', 'small').set_count(1)
+        running_instances.get('region-1b', 'c4', 'medium').set_count(1)
+        running_instances.get('region-1b', 'c4', 'large').set_count(1)
+        reserved_instances = aws_ec2_count.Instances()
+        reserved_instances.get('region', 'c4', 'large').set_count(3)
+        ondemand_instances, unused_instances = fetcher.get_ondemand_instances(running_instances, reserved_instances)
+        self.assertEqual(ondemand_instances.dump(), [
+            { 'az': 'region-1a', 'itype': 'c4.small',  'family': 'c4', 'size': 'small',  'count': 0.0, 'footprint': 0.0 },
+            { 'az': 'region-1a', 'itype': 'c4.medium', 'family': 'c4', 'size': 'medium', 'count': 0.0, 'footprint': 0.0 },
+            { 'az': 'region-1a', 'itype': 'c4.large',  'family': 'c4', 'size': 'large',  'count': 0.0, 'footprint': 0.0 },
+            { 'az': 'region-1b', 'itype': 'c4.small',  'family': 'c4', 'size': 'small',  'count': 0.0, 'footprint': 0.0 },
+            { 'az': 'region-1b', 'itype': 'c4.medium', 'family': 'c4', 'size': 'medium', 'count': 1.0, 'footprint': 2.0 },
+            { 'az': 'region-1b', 'itype': 'c4.large',  'family': 'c4', 'size': 'large',  'count': 0.0, 'footprint': 0.0 },
+        ])
+        self.assertEqual(unused_instances.dump(), [
+            { 'az': 'region', 'itype': 'c4.large', 'family': 'c4', 'size': 'large', 'count': 0.0, 'footprint': 0.0 },
+        ])
+
+        # hyblid
+        running_instances  = aws_ec2_count.Instances()
+        running_instances.get('region-1a', 'c4', 'large').set_count(5)
+        running_instances.get('region-1b', 'c4', 'large').set_count(10)
+        running_instances.get('region-1b', 'c4', 'xlarge').set_count(10)
+        reserved_instances = aws_ec2_count.Instances()
+        reserved_instances.get('region-1a', 'c4', 'large').set_count(10)
+        reserved_instances.get('region-1b', 'c4', 'large').set_count(5)
+        reserved_instances.get('region',    'c4', 'large').set_count(10)
+        ondemand_instances, unused_instances = fetcher.get_ondemand_instances(running_instances, reserved_instances)
+        self.assertEqual(ondemand_instances.dump(), [
+            { 'az': 'region-1a', 'itype': 'c4.large',  'family': 'c4', 'size': 'large',  'count':  0.0, 'footprint':  0.0 },
+            { 'az': 'region-1b', 'itype': 'c4.large',  'family': 'c4', 'size': 'large',  'count':  0.0, 'footprint':  0.0 },
+            { 'az': 'region-1b', 'itype': 'c4.xlarge', 'family': 'c4', 'size': 'xlarge', 'count':  7.5, 'footprint': 60.0 },
+        ])
+        self.assertEqual(unused_instances.dump(), [
+            { 'az': 'region',    'itype': 'c4.large', 'family': 'c4', 'size': 'large', 'count': 0.0, 'footprint':  0.0 },
+            { 'az': 'region-1a', 'itype': 'c4.large', 'family': 'c4', 'size': 'large', 'count': 5.0, 'footprint': 20.0 },
+            { 'az': 'region-1b', 'itype': 'c4.large', 'family': 'c4', 'size': 'large', 'count': 0.0, 'footprint':  0.0 },
+        ])
+
 class TestAWSEC2InstanceCounter(unittest.TestCase):
     def test_dummy(self):
         self.assertTrue(True)
