@@ -265,8 +265,11 @@ class InstanceFetcher():
             family, size = unused['family'], unused['size']
             if unused['counter'].get_footprint() == 0.0:
                 continue
-            for az in ondemand_instances.get_all_azs():
-                for size in ondemand_instances.get_all_sizes(az, family):
+            for size in ondemand_instances.get_all_sizes(None, family):
+                for az in ondemand_instances.get_all_azs():
+                    if not ondemand_instances.has(az, family, size):
+                        continue
+
                     ondemand = ondemand_instances.get(az, family, size)
                     if ondemand.get_footprint() >= unused['counter'].get_footprint():
                         ondemand.set_footprint(ondemand.get_footprint() - unused['counter'].get_footprint())
