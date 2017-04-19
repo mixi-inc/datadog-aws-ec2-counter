@@ -281,30 +281,47 @@ class AwsEc2Count(AgentCheck):
         fetcher = InstanceFetcher(instance['region'])
 
         running_instances = fetcher.get_running_instances()
-        self.__send_instance_info('running.count', running_instances)
+        self.__send_instance_info('running', running_instances)
 
         reserved_instances = fetcher.get_reserved_instances()
-        self.__send_instance_info('reserved.count', reserved_instances)
+        self.__send_instance_info('reserved', reserved_instances)
 
         ondemand_instances, unused_instances = fetcher.get_ondemand_instances(running_instances, reserved_instances)
-        self.__send_instance_info('ondemand.count', ondemand_instances)
-        self.__send_instance_info('reserved.unused', unused_instances)
+        self.__send_instance_info('ondemand', ondemand_instances)
+        self.__send_instance_info('reserved_unused', unused_instances)
 
-    def __send_instance_info(self, label, instances):
-        self.log.info(label)
+    def __send_instance_info(self, category, instances):
+        self.log.info(category)
         for instance in instances.dump():
-            az, itype, count = instance['az'], instance['itype'], instance['count']
-            self.log.info('%s : %s = %s' % (az, itype, count))
-            self.__send_gauge(label, az, itype, count)
+            self.log.info('%s : %s = %s (%s)' % (instance['az'], instance['itype'], instance['count'], instance['footprint']))
+            self.__send_count(category, instance)
 
-    def __send_gauge(self, metric, az, instance_type, count):
+    def __send_count(self, category, instance):
+        self.__send_gauge(
+            '%s.count' % category,
+            instance['count'],
+            [
+                'ac-az:%s'     % instance['az'],
+                'ac-type:%s'   % instance['itype'],
+                'ac-family:%s' % instance['family'],
+            ]
+        )
+        self.__send_gauge(
+            '%s.footprint' % category,
+            instance['footprint'],
+            [
+                'ac-az:%s'     % instance['az'],
+                'ac-type:%s'   % instance['itype'],
+                'ac-family:%s' % instance['family'],
+            ]
+        )
+
+
+    def __send_gauge(self, metric, value, tags):
         prefix = 'aws_ec2_count_1.'
         self.gauge(
             prefix + metric,
-            count,
-            tags = [
-                'ac-availability-zone:%s' % az,
-                'ac-instance-type:%s'     % instance_type
-            ]
+            value,
+            tags = tags
         )
 
