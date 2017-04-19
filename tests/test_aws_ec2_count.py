@@ -92,8 +92,16 @@ class TestInstances(unittest.TestCase):
         instances.get('region-1a', 'c3', '4xlarge')
         instances.get('region-1a', 'c3', '2xlarge')
         instances.get('region-1a', 'c3', 'xlarge')
+        instances.get('region-1b', 'c3', '8xlarge')
+        instances.get('region-1b', 'c3', '4xlarge')
+        instances.get('region-1b', 'c3', 'large')
         parts = instances.get_all_sizes('region-1a', 'c3')
         self.assertEqual(parts, ['large', 'xlarge', '2xlarge', '4xlarge'])
+        parts = instances.get_all_sizes('region-1b', 'c3')
+        self.assertEqual(parts, ['large', '4xlarge', '8xlarge'])
+        parts = instances.get_all_sizes(None, 'c3')
+        self.assertEqual(parts, ['large', 'xlarge', '2xlarge', '4xlarge', '8xlarge'])
+
 
     def test_get_all_instances(self):
         instances = aws_ec2_count.Instances()

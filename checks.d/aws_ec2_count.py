@@ -91,10 +91,16 @@ class Instances():
         return sorted(self.__instances[az].keys())
 
     def get_all_sizes(self, az, family):
+        azs = [ az ]
+        if az is None:
+            azs = self.get_all_azs()
+
         sizes = []
         for size in NormalizationFactor.get_sorted_all_sizes():
-            if self.has(az, family, size):
-                sizes.append(size)
+            for az in azs:
+                if self.has(az, family, size):
+                    sizes.append(size)
+                    break
 
         return sizes
 
