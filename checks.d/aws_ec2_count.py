@@ -325,7 +325,6 @@ class AwsEc2Count(AgentCheck):
             ]
         )
 
-
     def __send_gauge(self, metric, value, tags):
         prefix = 'aws_ec2_count_1.'
         self.gauge(

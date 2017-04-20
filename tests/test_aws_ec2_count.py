@@ -1,6 +1,7 @@
 import unittest
 from mock import Mock
 from mock import patch
+from mock import call
 
 import aws_ec2_count
 
@@ -371,8 +372,114 @@ class TestInstanceFetcher(unittest.TestCase):
             { 'az': 'region-1b', 'itype': 'c4.xlarge', 'family': 'c4', 'size': 'xlarge', 'count': 0.0, 'footprint':  0.0 },
         ])
 
-class TestAWSEC2InstanceCounter(unittest.TestCase):
-    def test_dummy(self):
-        self.assertTrue(True)
+class TestAwsEc2Count(unittest.TestCase):
+    def setUp(self):
+        self.mock_log = Mock()
+        aws_ec2_count.AwsEc2Count.log   = self.mock_log
+        self.mock_gauge = Mock()
+        aws_ec2_count.AwsEc2Count.gauge = self.mock_gauge
 
+        self.patcher_running  = patch('aws_ec2_count.InstanceFetcher.get_running_instances')
+        self.mock_running = self.patcher_running.start()
+        self.patcher_reserved = patch('aws_ec2_count.InstanceFetcher.get_reserved_instances')
+        self.mock_reserved = self.patcher_reserved.start()
+        self.patcher_ondemand = patch('aws_ec2_count.InstanceFetcher.get_ondemand_instances')
+        self.mock_ondemand = self.patcher_ondemand.start()
 
+    def tearDown(self):
+        self.patcher_running.stop()
+        self.patcher_reserved.stop()
+        self.patcher_ondemand.stop()
+
+    def reset_mock(self):
+        self.mock_log.reset_mock()
+        self.mock_gauge.reset_mock()
+
+    def get_log(self, level, order):
+        log = getattr(self.mock_log, level)
+        return log.call_args_list[order - 1][0][0]
+
+    def assert_log(self, level, order, string):
+        self.assertEqual(self.get_log(level, order), string)
+
+    def assert_log_count(self, level, count):
+        log = getattr(self.mock_log, level)
+        if count == 0:
+            log.assert_not_called()
+        else:
+            self.assertEqual(len(log.call_args_list), count)
+
+    def assert_gauge(self, order, data):
+        self.assertEqual(self.mock_gauge.call_args_list[order - 1], data)
+
+    def assert_gauge_count(self, count):
+        if count == 0:
+            self.mock_gauge.assert_not_called()
+        else:
+            self.assertEqual(len(self.mock_gauge.call_args_list), count)
+
+    def test_check_invaid_region(self):
+        self.reset_mock()
+        counter = aws_ec2_count.AwsEc2Count()
+        counter.check({})
+
+        self.assert_log_count('info', 0)
+        self.assert_log_count('error', 1)
+        self.assert_log('error', 1, 'no region')
+        self.assert_gauge_count(0)
+
+    def test_check(self):
+        self.reset_mock()
+        running = aws_ec2_count.Instances()
+        running.get('region-1a', 'c4', 'large').set_count(1)
+        running.get('region-1a', 'c4', 'xlarge').set_count(2)
+        self.mock_running.return_value = running
+
+        reserved = aws_ec2_count.Instances()
+        reserved.get('region-1a', 'c3', 'large').set_count(3)
+        reserved.get('region-1a', 'c3', 'xlarge').set_count(4)
+        self.mock_reserved.return_value = running
+
+        ondemand = aws_ec2_count.Instances()
+        ondemand.get('region-1a', 'm4', 'large').set_count(5)
+        ondemand.get('region-1a', 'm4', 'xlarge').set_count(6)
+        reserved_unused = aws_ec2_count.Instances()
+        reserved_unused.get('region-1a', 'm3', 'large').set_count(7)
+        reserved_unused.get('region-1a', 'm3', 'xlarge').set_count(8)
+        self.mock_ondemand.return_value = ( ondemand, reserved_unused )
+
+        counter = aws_ec2_count.AwsEc2Count()
+        counter.check({ 'region': 'region' })
+
+        self.assert_log_count('info', 12)
+        self.assert_log_count('error', 0)
+        self.assert_log('info',  1, 'running')
+        self.assert_log('info',  2, 'region-1a : c4.large = 1.0 (4.0)')
+        self.assert_log('info',  3, 'region-1a : c4.xlarge = 2.0 (16.0)')
+        self.assert_log('info',  4, 'reserved')
+        self.assert_log('info',  5, 'region-1a : c4.large = 1.0 (4.0)')
+        self.assert_log('info',  6, 'region-1a : c4.xlarge = 2.0 (16.0)')
+        self.assert_log('info',  7, 'ondemand')
+        self.assert_log('info',  8, 'region-1a : m4.large = 5.0 (20.0)')
+        self.assert_log('info',  9, 'region-1a : m4.xlarge = 6.0 (48.0)')
+        self.assert_log('info', 10, 'reserved_unused')
+        self.assert_log('info', 11, 'region-1a : m3.large = 7.0 (28.0)')
+        self.assert_log('info', 12, 'region-1a : m3.xlarge = 8.0 (64.0)')
+
+        self.assert_gauge_count(16)
+        self.assert_gauge( 1, call('aws_ec2_count_1.running.count',              1.0, tags=['ac-az:region-1a', 'ac-type:c4.large',  'ac-family:c4']))
+        self.assert_gauge( 2, call('aws_ec2_count_1.running.footprint',          4.0, tags=['ac-az:region-1a', 'ac-type:c4.large',  'ac-family:c4']))
+        self.assert_gauge( 3, call('aws_ec2_count_1.running.count',              2.0, tags=['ac-az:region-1a', 'ac-type:c4.xlarge', 'ac-family:c4']))
+        self.assert_gauge( 4, call('aws_ec2_count_1.running.footprint',         16.0, tags=['ac-az:region-1a', 'ac-type:c4.xlarge', 'ac-family:c4']))
+        self.assert_gauge( 5, call('aws_ec2_count_1.reserved.count',             1.0, tags=['ac-az:region-1a', 'ac-type:c4.large',  'ac-family:c4']))
+        self.assert_gauge( 6, call('aws_ec2_count_1.reserved.footprint',         4.0, tags=['ac-az:region-1a', 'ac-type:c4.large',  'ac-family:c4']))
+        self.assert_gauge( 7, call('aws_ec2_count_1.reserved.count',             2.0, tags=['ac-az:region-1a', 'ac-type:c4.xlarge', 'ac-family:c4']))
+        self.assert_gauge( 8, call('aws_ec2_count_1.reserved.footprint',        16.0, tags=['ac-az:region-1a', 'ac-type:c4.xlarge', 'ac-family:c4']))
+        self.assert_gauge( 9, call('aws_ec2_count_1.ondemand.count',             5.0, tags=['ac-az:region-1a', 'ac-type:m4.large',  'ac-family:m4']))
+        self.assert_gauge(10, call('aws_ec2_count_1.ondemand.footprint',        20.0, tags=['ac-az:region-1a', 'ac-type:m4.large',  'ac-family:m4']))
+        self.assert_gauge(11, call('aws_ec2_count_1.ondemand.count',             6.0, tags=['ac-az:region-1a', 'ac-type:m4.xlarge', 'ac-family:m4']))
+        self.assert_gauge(12, call('aws_ec2_count_1.ondemand.footprint',        48.0, tags=['ac-az:region-1a', 'ac-type:m4.xlarge', 'ac-family:m4']))
+        self.assert_gauge(13, call('aws_ec2_count_1.reserved_unused.count',      7.0, tags=['ac-az:region-1a', 'ac-type:m3.large',  'ac-family:m3']))
+        self.assert_gauge(14, call('aws_ec2_count_1.reserved_unused.footprint', 28.0, tags=['ac-az:region-1a', 'ac-type:m3.large',  'ac-family:m3']))
+        self.assert_gauge(15, call('aws_ec2_count_1.reserved_unused.count',      8.0, tags=['ac-az:region-1a', 'ac-type:m3.xlarge', 'ac-family:m3']))
+        self.assert_gauge(16, call('aws_ec2_count_1.reserved_unused.footprint', 64.0, tags=['ac-az:region-1a', 'ac-type:m3.xlarge', 'ac-family:m3']))
