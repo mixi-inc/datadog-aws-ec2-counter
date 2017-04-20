@@ -166,6 +166,121 @@ class TestInstances(unittest.TestCase):
         ])
 
 class TestInstanceFetcher(unittest.TestCase):
+    def setUp(self):
+        self.mock_ec2_client = Mock()
+
+        self.mock_session_object = Mock()
+        self.mock_session_object.client.return_value = self.mock_ec2_client
+
+        self.patcher_session = patch('aws_ec2_count.Session')
+        self.mock_session = self.patcher_session.start()
+        self.mock_session.return_value = self.mock_session_object
+
+    def tearDown(self):
+        self.patcher_session.stop()
+
+    def test_get_running_instances(self):
+        self.mock_ec2_client.describe_instances.return_value = {
+            'Reservations': [
+                {
+                    'Instances': [
+                        {
+                            # SpotInstance
+                            'Placement' : { 'AvailabilityZone' : 'region-1a' },
+                            'InstanceType' : 'c3.large',
+                            'SpotInstanceRequestId': 'hoge',
+                        },
+                        {
+                            # not 'Linux/UNIX' Platform
+                            'Placement' : { 'AvailabilityZone' : 'region-1a' },
+                            'InstanceType' : 'c3.large',
+                            'Platform': 'hoge',
+                        },
+                        {
+                            'Placement' : { 'AvailabilityZone' : 'region-1a' },
+                            'InstanceType' : 'c3.large',
+                        },
+                        {
+                            'Placement' : { 'AvailabilityZone' : 'region-1a' },
+                            'InstanceType' : 'c3.large',
+                        },
+                    ]
+                },
+                {
+                    'Instances': [
+                        {
+                            'Placement' : { 'AvailabilityZone' : 'region-1a' },
+                            'InstanceType' : 'c3.xlarge',
+                        },
+                        {
+                            'Placement' : { 'AvailabilityZone' : 'region-1b' },
+                            'InstanceType' : 'c3.xlarge',
+                        },
+                    ]
+                },
+            ]
+        }
+
+        fetcher = aws_ec2_count.InstanceFetcher('region')
+        instances = fetcher.get_running_instances()
+        self.assertEqual(instances.dump(), [
+            { 'az': 'region-1a', 'itype': 'c3.large',  'family': 'c3', 'size': 'large',  'count': 2.0, 'footprint': 8.0 },
+            { 'az': 'region-1a', 'itype': 'c3.xlarge', 'family': 'c3', 'size': 'xlarge', 'count': 1.0, 'footprint': 8.0 },
+            { 'az': 'region-1b', 'itype': 'c3.xlarge', 'family': 'c3', 'size': 'xlarge', 'count': 1.0, 'footprint': 8.0 },
+        ])
+
+    def test_get_reserved_instances(self):
+        self.mock_ec2_client.describe_reserved_instances.return_value = {
+            'ReservedInstances' : [
+                {
+                    'ReservedInstancesId': 1,
+                    'AvailabilityZone'   : 'region-1a',
+                    'InstanceType'       : 'c3.large',
+                    'InstanceCount'      : 2,
+                },
+                {
+                    'ReservedInstancesId': 2,
+                    'AvailabilityZone'   : 'region-1a',
+                    'InstanceType'       : 'c3.large',
+                    'InstanceCount'      : 1,
+                },
+                {
+                    'ReservedInstancesId': 3,
+                    'AvailabilityZone'   : 'region-1a',
+                    'InstanceType'       : 'c3.xlarge',
+                    'InstanceCount'      : 4,
+                },
+                {
+                    'ReservedInstancesId': 4,
+                    'AvailabilityZone'   : 'region-1b',
+                    'InstanceType'       : 'c3.large',
+                    'InstanceCount'      : 4,
+                },
+                {
+                    # processing status
+                    'ReservedInstancesId': 5,
+                    'AvailabilityZone'   : 'region-1b',
+                    'InstanceType'       : 'c3.xlarge',
+                    'InstanceCount'      : 5,
+                },
+            ],
+        }
+        self.mock_ec2_client.describe_reserved_instances_modifications.side_effect = [
+            { 'ReservedInstancesModifications': [] },
+            { 'ReservedInstancesModifications': [] },
+            { 'ReservedInstancesModifications': [] },
+            { 'ReservedInstancesModifications': [] },
+            { 'ReservedInstancesModifications': [ {} ] }, # processing status
+        ]
+
+        fetcher = aws_ec2_count.InstanceFetcher('region')
+        instances = fetcher.get_reserved_instances()
+        self.assertEqual(instances.dump(), [
+            { 'az': 'region-1a', 'itype': 'c3.large',  'family': 'c3', 'size': 'large',  'count': 3.0, 'footprint': 12.0 },
+            { 'az': 'region-1a', 'itype': 'c3.xlarge', 'family': 'c3', 'size': 'xlarge', 'count': 4.0, 'footprint': 32.0 },
+            { 'az': 'region-1b', 'itype': 'c3.large',  'family': 'c3', 'size': 'large',  'count': 4.0, 'footprint': 16.0 },
+        ])
+
     def test_get_ondemand_instances(self):
         fetcher = aws_ec2_count.InstanceFetcher('region')
 
