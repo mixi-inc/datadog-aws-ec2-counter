@@ -33,7 +33,7 @@ AWS の EC2 のオンデマンドインスタンスの稼働状況を Datadog �
 
 | Tag | 内容 |
 |-|-|
-| ac-az | Availability Zone (Region RI の場合は '') |
+| ac-az | Availability Zone (Region RI の場合は 'region' が入ります) |
 | ac-family | Instance Family |
 | ac-type | Instance Type |
 
