@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/mounemoi/datadog-aws-ec2-counter.svg?branch=master)](https://travis-ci.org/mounemoi/datadog-aws-ec2-counter)
 
 # datadog-aws-ec2-counter
-AWS の EC2 のオンデマンドインスタンスの稼働状況を Datadog のカスタムメトリクスで取得するための Datadog Agent Check です。
+AWS の EC2 のオンデマンドインスタンスの稼働状況を [Datadog](https://www.datadoghq.com/) のカスタムメトリクスで取得するための Agent Check です。
 
 この Agent Check で取得できる情報は以下になります。
 
@@ -33,7 +33,7 @@ AWS の EC2 のオンデマンドインスタンスの稼働状況を Datadog �
 
 | Tag | 内容 |
 |-|-|
-| ac-az | Availability Zone (Region RI の場合は 'region' が入ります) |
+| ac-az | Availability Zone (Region 単位のリザーブドインスタンスの場合には 'region' が入ります) |
 | ac-family | Instance Family |
 | ac-type | Instance Type |
 
@@ -102,7 +102,7 @@ $ sudo /etc/init.d/datadog-agent restart
 - オンデマンドインスタンス数は、稼働中のインスタンスと有効なリザーブドインスタンス数との差分で求めています
     - このため、請求額と完全に一致しない場合があります
     - また、 今後の AWS 側の仕様変更などにより、リザーブドインスタンスの適用条件が変わる可能性があります
-- Region RI は以下の条件で適用するように計算しています
+- Region 単位のリザーブドインスタンスは以下の条件で適用するように計算しています
     - Instance Type が一致しているものに優先的に適用
     - 余剰分は同一 Instance Family の最小の Instanence Size から適用するようにしています
         - これにより、オンデマンドインスタンス数が最小になるようにしています
