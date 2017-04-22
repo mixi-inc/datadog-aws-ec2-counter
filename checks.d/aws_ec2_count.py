@@ -204,7 +204,6 @@ class InstanceFetcher():
         reserved_instances = self.__ec2.describe_reserved_instances(
             Filters = [
                 { 'Name' : 'state',               'Values' : [ 'active' ] },
-                { 'Name' : 'scope',               'Values' : [ 'Availability Zone' ] },
                 { 'Name' : 'product-description', 'Values' : [ 'Linux/UNIX' ] },
                 { 'Name' : 'instance-tenancy',    'Values' : [ 'default' ] },
             ],
@@ -221,8 +220,14 @@ class InstanceFetcher():
             if len(modify_requests['ReservedInstancesModifications']) >= 1:
                 continue
 
+            az = None
+            if reserved_instance['Scope'] == 'Region':
+                az = 'region'
+            else:
+                az = reserved_instance['AvailabilityZone']
+
             instances.get_itype(
-                reserved_instance['AvailabilityZone'],
+                az,
                 reserved_instance['InstanceType'],
             ).add_count(reserved_instance['InstanceCount'])
 

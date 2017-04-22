@@ -235,24 +235,28 @@ class TestInstanceFetcher(unittest.TestCase):
             'ReservedInstances' : [
                 {
                     'ReservedInstancesId': 1,
+                    'Scope'              : 'Availability Zone',
                     'AvailabilityZone'   : 'region-1a',
                     'InstanceType'       : 'c3.large',
                     'InstanceCount'      : 2,
                 },
                 {
                     'ReservedInstancesId': 2,
+                    'Scope'              : 'Availability Zone',
                     'AvailabilityZone'   : 'region-1a',
                     'InstanceType'       : 'c3.large',
                     'InstanceCount'      : 1,
                 },
                 {
                     'ReservedInstancesId': 3,
+                    'Scope'              : 'Availability Zone',
                     'AvailabilityZone'   : 'region-1a',
                     'InstanceType'       : 'c3.xlarge',
                     'InstanceCount'      : 4,
                 },
                 {
                     'ReservedInstancesId': 4,
+                    'Scope'              : 'Availability Zone',
                     'AvailabilityZone'   : 'region-1b',
                     'InstanceType'       : 'c3.large',
                     'InstanceCount'      : 4,
@@ -260,9 +264,16 @@ class TestInstanceFetcher(unittest.TestCase):
                 {
                     # processing status
                     'ReservedInstancesId': 5,
+                    'Scope'              : 'Availability Zone',
                     'AvailabilityZone'   : 'region-1b',
                     'InstanceType'       : 'c3.xlarge',
                     'InstanceCount'      : 5,
+                },
+                {
+                    'ReservedInstancesId': 6,
+                    'Scope'              : 'Region',
+                    'InstanceType'       : 'c3.xlarge',
+                    'InstanceCount'      : 1,
                 },
             ],
         }
@@ -272,11 +283,13 @@ class TestInstanceFetcher(unittest.TestCase):
             { 'ReservedInstancesModifications': [] },
             { 'ReservedInstancesModifications': [] },
             { 'ReservedInstancesModifications': [ {} ] }, # processing status
+            { 'ReservedInstancesModifications': [] },
         ]
 
         fetcher = aws_ec2_count.InstanceFetcher('region')
         instances = fetcher.get_reserved_instances()
         self.assertEqual(instances.dump(), [
+            { 'az': 'region',    'itype': 'c3.xlarge', 'family': 'c3', 'size': 'xlarge', 'count': 1.0, 'footprint':  8.0 },
             { 'az': 'region-1a', 'itype': 'c3.large',  'family': 'c3', 'size': 'large',  'count': 3.0, 'footprint': 12.0 },
             { 'az': 'region-1a', 'itype': 'c3.xlarge', 'family': 'c3', 'size': 'xlarge', 'count': 4.0, 'footprint': 32.0 },
             { 'az': 'region-1b', 'itype': 'c3.large',  'family': 'c3', 'size': 'large',  'count': 4.0, 'footprint': 16.0 },
