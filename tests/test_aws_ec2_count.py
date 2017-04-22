@@ -231,6 +231,9 @@ class TestInstanceFetcher(unittest.TestCase):
         ])
 
     def test_get_reserved_instances(self):
+        fetcher = aws_ec2_count.InstanceFetcher('region')
+
+        # general
         self.mock_ec2_client.describe_reserved_instances.return_value = {
             'ReservedInstances' : [
                 {
@@ -282,11 +285,9 @@ class TestInstanceFetcher(unittest.TestCase):
             { 'ReservedInstancesModifications': [] },
             { 'ReservedInstancesModifications': [] },
             { 'ReservedInstancesModifications': [] },
-            { 'ReservedInstancesModifications': [ {} ] }, # processing status
+            { 'ReservedInstancesModifications': [ { 'ModificationResults': [ { 'ReservedInstancesId': '123' } ] } ] }, # processing status
             { 'ReservedInstancesModifications': [] },
         ]
-
-        fetcher = aws_ec2_count.InstanceFetcher('region')
         instances = fetcher.get_reserved_instances()
         self.assertEqual(instances.dump(), [
             { 'az': 'region',    'itype': 'c3.xlarge', 'family': 'c3', 'size': 'xlarge', 'count': 1.0, 'footprint':  8.0 },
@@ -294,6 +295,24 @@ class TestInstanceFetcher(unittest.TestCase):
             { 'az': 'region-1a', 'itype': 'c3.xlarge', 'family': 'c3', 'size': 'xlarge', 'count': 4.0, 'footprint': 32.0 },
             { 'az': 'region-1b', 'itype': 'c3.large',  'family': 'c3', 'size': 'large',  'count': 4.0, 'footprint': 16.0 },
         ])
+
+        # processing status
+        self.mock_ec2_client.describe_reserved_instances.return_value = {
+            'ReservedInstances' : [
+                {
+                    'ReservedInstancesId': 1,
+                    'Scope'              : 'Availability Zone',
+                    'AvailabilityZone'   : 'region-1a',
+                    'InstanceType'       : 'c3.large',
+                    'InstanceCount'      : 2,
+                },
+            ],
+        }
+        self.mock_ec2_client.describe_reserved_instances_modifications.side_effect = [
+            { 'ReservedInstancesModifications': [ { 'ModificationResults': [ {} ] } ] }, # processing status
+        ]
+        instances = fetcher.get_reserved_instances()
+        self.assertTrue(instances is None)
 
     def test_get_ondemand_instances(self):
         fetcher = aws_ec2_count.InstanceFetcher('region')
@@ -466,10 +485,10 @@ class TestAwsEc2Count(unittest.TestCase):
 
         self.assert_log_count('info', 12)
         self.assert_log_count('error', 0)
-        self.assert_log('info',  1, 'running')
+        self.assert_log('info',  1, 'reserved')
         self.assert_log('info',  2, 'region-1a : c4.large = 1.0 (4.0)')
         self.assert_log('info',  3, 'region-1a : c4.xlarge = 2.0 (16.0)')
-        self.assert_log('info',  4, 'reserved')
+        self.assert_log('info',  4, 'running')
         self.assert_log('info',  5, 'region-1a : c4.large = 1.0 (4.0)')
         self.assert_log('info',  6, 'region-1a : c4.xlarge = 2.0 (16.0)')
         self.assert_log('info',  7, 'ondemand')
@@ -480,14 +499,14 @@ class TestAwsEc2Count(unittest.TestCase):
         self.assert_log('info', 12, 'region-1a : m3.xlarge = 8.0 (64.0)')
 
         self.assert_gauge_count(16)
-        self.assert_gauge( 1, call('aws_ec2_count_1.running.count',              1.0, tags=['ac-az:region-1a', 'ac-type:c4.large',  'ac-family:c4']))
-        self.assert_gauge( 2, call('aws_ec2_count_1.running.footprint',          4.0, tags=['ac-az:region-1a', 'ac-type:c4.large',  'ac-family:c4']))
-        self.assert_gauge( 3, call('aws_ec2_count_1.running.count',              2.0, tags=['ac-az:region-1a', 'ac-type:c4.xlarge', 'ac-family:c4']))
-        self.assert_gauge( 4, call('aws_ec2_count_1.running.footprint',         16.0, tags=['ac-az:region-1a', 'ac-type:c4.xlarge', 'ac-family:c4']))
-        self.assert_gauge( 5, call('aws_ec2_count_1.reserved.count',             1.0, tags=['ac-az:region-1a', 'ac-type:c4.large',  'ac-family:c4']))
-        self.assert_gauge( 6, call('aws_ec2_count_1.reserved.footprint',         4.0, tags=['ac-az:region-1a', 'ac-type:c4.large',  'ac-family:c4']))
-        self.assert_gauge( 7, call('aws_ec2_count_1.reserved.count',             2.0, tags=['ac-az:region-1a', 'ac-type:c4.xlarge', 'ac-family:c4']))
-        self.assert_gauge( 8, call('aws_ec2_count_1.reserved.footprint',        16.0, tags=['ac-az:region-1a', 'ac-type:c4.xlarge', 'ac-family:c4']))
+        self.assert_gauge( 1, call('aws_ec2_count_1.reserved.count',             1.0, tags=['ac-az:region-1a', 'ac-type:c4.large',  'ac-family:c4']))
+        self.assert_gauge( 2, call('aws_ec2_count_1.reserved.footprint',         4.0, tags=['ac-az:region-1a', 'ac-type:c4.large',  'ac-family:c4']))
+        self.assert_gauge( 3, call('aws_ec2_count_1.reserved.count',             2.0, tags=['ac-az:region-1a', 'ac-type:c4.xlarge', 'ac-family:c4']))
+        self.assert_gauge( 4, call('aws_ec2_count_1.reserved.footprint',        16.0, tags=['ac-az:region-1a', 'ac-type:c4.xlarge', 'ac-family:c4']))
+        self.assert_gauge( 5, call('aws_ec2_count_1.running.count',              1.0, tags=['ac-az:region-1a', 'ac-type:c4.large',  'ac-family:c4']))
+        self.assert_gauge( 6, call('aws_ec2_count_1.running.footprint',          4.0, tags=['ac-az:region-1a', 'ac-type:c4.large',  'ac-family:c4']))
+        self.assert_gauge( 7, call('aws_ec2_count_1.running.count',              2.0, tags=['ac-az:region-1a', 'ac-type:c4.xlarge', 'ac-family:c4']))
+        self.assert_gauge( 8, call('aws_ec2_count_1.running.footprint',         16.0, tags=['ac-az:region-1a', 'ac-type:c4.xlarge', 'ac-family:c4']))
         self.assert_gauge( 9, call('aws_ec2_count_1.ondemand.count',             5.0, tags=['ac-az:region-1a', 'ac-type:m4.large',  'ac-family:m4']))
         self.assert_gauge(10, call('aws_ec2_count_1.ondemand.footprint',        20.0, tags=['ac-az:region-1a', 'ac-type:m4.large',  'ac-family:m4']))
         self.assert_gauge(11, call('aws_ec2_count_1.ondemand.count',             6.0, tags=['ac-az:region-1a', 'ac-type:m4.xlarge', 'ac-family:m4']))

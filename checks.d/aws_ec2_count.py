@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from checks import AgentCheck
 from boto3.session import Session
 from collections import OrderedDict
@@ -218,6 +219,16 @@ class InstanceFetcher():
                 ],
             )
             if len(modify_requests['ReservedInstancesModifications']) >= 1:
+                for modification in modify_requests['ReservedInstancesModifications']:
+                    for result in modification['ModificationResults']:
+                        if 'ReservedInstancesId' not in result:
+                            # MEMO: RI 契約が変更中( status = processing ) かつ、
+                            #       変更先の RI 契約が確定していない場合、
+                            #       RI の集計にずれが発生するタイミングがあるので、RI の集計はしない
+                            return None
+
+                # MEMO: RI 契約が変更中かつ、変更先の RI 契約が確定している場合
+                #       変更元の RI を集計すると2重計上になるので集計から外す
                 continue
 
             az = None
@@ -294,11 +305,13 @@ class AwsEc2Count(AgentCheck):
 
         fetcher = InstanceFetcher(instance['region'])
 
+        reserved_instances = fetcher.get_reserved_instances()
+        if reserved_instances is None:
+            return
+        self.__send_instance_info('reserved', reserved_instances)
+
         running_instances = fetcher.get_running_instances()
         self.__send_instance_info('running', running_instances)
-
-        reserved_instances = fetcher.get_reserved_instances()
-        self.__send_instance_info('reserved', reserved_instances)
 
         ondemand_instances, unused_instances = fetcher.get_ondemand_instances(running_instances, reserved_instances)
         self.__send_instance_info('ondemand', ondemand_instances)
