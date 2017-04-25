@@ -166,7 +166,7 @@ class Instances():
 
 class InstanceFetcher():
     def __init__(self, region):
-        session = Session(region_name = region)
+        session = Session(region_name=region)
         self.__ec2 = session.client('ec2')
 
     def get_running_instances(self):
@@ -174,12 +174,12 @@ class InstanceFetcher():
         next_token = ''
         while True:
             running_instances = self.__ec2.describe_instances(
-                Filters = [
+                Filters=[
                     { 'Name' : 'instance-state-name', 'Values' : [ 'running' ] },
                     { 'Name' : 'tenancy',             'Values' : [ 'default' ] },
                 ],
-                MaxResults = 100,
-                NextToken = next_token,
+                MaxResults=100,
+                NextToken=next_token,
             )
 
             for reservation in running_instances['Reservations']:
@@ -207,7 +207,7 @@ class InstanceFetcher():
         instances = Instances()
 
         reserved_instances = self.__ec2.describe_reserved_instances(
-            Filters = [
+            Filters=[
                 { 'Name' : 'state',               'Values' : [ 'active' ] },
                 { 'Name' : 'product-description', 'Values' : [ 'Linux/UNIX' ] },
                 { 'Name' : 'instance-tenancy',    'Values' : [ 'default' ] },
@@ -217,7 +217,7 @@ class InstanceFetcher():
         for reserved_instance in reserved_instances['ReservedInstances']:
             # exclude processing status
             modify_requests = self.__ec2.describe_reserved_instances_modifications(
-                Filters = [
+                Filters=[
                     { 'Name' : 'status',                'Values' : [ 'processing' ] },
                     { 'Name' : 'reserved-instances-id', 'Values' : [ reserved_instance['ReservedInstancesId'] ] },
                 ],
@@ -353,6 +353,6 @@ class AwsEc2Count(AgentCheck):
         self.gauge(
             prefix + metric,
             value,
-            tags = tags
+            tags=tags
         )
 
