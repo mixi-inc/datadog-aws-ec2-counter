@@ -7,4 +7,4 @@ install:
     - pip install -r requirements-test.txt
 script:
     - make test PYTHON_PATH=''
-    - make codingrule PYTHON_PATH=''
+    - make coding-rule PYTHON_PATH=''
