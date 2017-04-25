@@ -288,7 +288,7 @@ class TestInstanceFetcher(unittest.TestCase):
             { 'ReservedInstancesModifications': [] },
             { 'ReservedInstancesModifications': [] },
             { 'ReservedInstancesModifications': [] },
-            { 'ReservedInstancesModifications': [ { 'ModificationResults': [ { 'ReservedInstancesId': '123' } ] } ] }, # processing status
+            { 'ReservedInstancesModifications': [ { 'ModificationResults': [ { 'ReservedInstancesId': '123' } ] } ] },  # processing status
             { 'ReservedInstancesModifications': [] },
         ]
         instances = fetcher.get_reserved_instances()
@@ -312,7 +312,7 @@ class TestInstanceFetcher(unittest.TestCase):
             ],
         }
         self.mock_ec2_client.describe_reserved_instances_modifications.side_effect = [
-            { 'ReservedInstancesModifications': [ { 'ModificationResults': [ {} ] } ] }, # processing status
+            { 'ReservedInstancesModifications': [ { 'ModificationResults': [ {} ] } ] },  # processing status
         ]
         instances = fetcher.get_reserved_instances()
         self.assertTrue(instances is None)
@@ -382,10 +382,10 @@ class TestInstanceFetcher(unittest.TestCase):
 
         # hyblid
         running_instances  = aws_ec2_count.Instances()
-        running_instances.get('region-1a', 'c4', 'medium').set_count(10) # footprint = 20
-        running_instances.get('region-1a', 'c4', 'large').set_count(4)   # footprint = 12
+        running_instances.get('region-1a', 'c4', 'medium').set_count(10)  # footprint = 20
+        running_instances.get('region-1a', 'c4', 'large').set_count(4)    # footprint = 12
         running_instances.get('region-1a', 'c4', 'xlarge').set_count(5)
-        running_instances.get('region-1b', 'c4', 'medium').set_count(4)  # footprint =  8
+        running_instances.get('region-1b', 'c4', 'medium').set_count(4)   # footprint =  8
         running_instances.get('region-1b', 'c4', 'large').set_count(2)
         running_instances.get('region-1b', 'c4', 'xlarge').set_count(10)
         reserved_instances = aws_ec2_count.Instances()
