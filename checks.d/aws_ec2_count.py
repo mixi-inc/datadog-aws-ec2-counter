@@ -28,7 +28,7 @@ class NormalizationFactor():
     @classmethod
     def get_value(cls, size):
         if size not in cls.__nf:
-            raise TypeError('unknown instance size : %s' % size)
+            raise TypeError('unknown instance size : {}'.format(size))
 
         return cls.__nf[size]
 
@@ -155,7 +155,7 @@ class Instances():
         for instance in self.get_all_instances():
             instances.append({
                 'az'        : instance['az'],
-                'itype'     : '%s.%s' % (instance['family'], instance['size']),
+                'itype'     : '{family}.{size}'.format(**instance),
                 'family'    : instance['family'],
                 'size'      : instance['size'],
                 'count'     : instance['counter'].get_count(),
@@ -325,27 +325,24 @@ class AwsEc2Count(AgentCheck):
     def __send_instance_info(self, category, instances):
         self.log.info(category)
         for instance in instances.dump():
-            self.log.info('%s : %s = %s (%s)' % (instance['az'], instance['itype'], instance['count'], instance['footprint']))
+            self.log.info('{az} : {itype} = {count} ({footprint})'.format(**instance))
             self.__send_count(category, instance)
 
     def __send_count(self, category, instance):
+        tags = [
+            'ac-az:{az}'.format(**instance),
+            'ac-type:{itype}'.format(**instance),
+            'ac-family:{family}'.format(**instance),
+        ]
         self.__send_gauge(
-            '%s.count' % category,
+            '{}.count'.format(category),
             instance['count'],
-            [
-                'ac-az:%s'     % instance['az'],
-                'ac-type:%s'   % instance['itype'],
-                'ac-family:%s' % instance['family'],
-            ]
+            tags,
         )
         self.__send_gauge(
-            '%s.footprint' % category,
+            '{}.footprint'.format(category),
             instance['footprint'],
-            [
-                'ac-az:%s'     % instance['az'],
-                'ac-type:%s'   % instance['itype'],
-                'ac-family:%s' % instance['family'],
-            ]
+            tags,
         )
 
     def __send_gauge(self, metric, value, tags):
