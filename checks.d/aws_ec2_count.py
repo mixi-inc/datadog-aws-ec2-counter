@@ -111,8 +111,8 @@ class Instances():
     def has(self, az, family, size):
         if self.has_az(az) \
             and self.has_family(az, family) \
-            and (size in self.__instances[az][family]):
-                return True
+                and (size in self.__instances[az][family]):
+                    return True
 
         return False
 
