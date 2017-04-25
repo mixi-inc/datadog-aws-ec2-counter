@@ -3,6 +3,7 @@ from checks import AgentCheck
 from boto3.session import Session
 from collections import OrderedDict
 
+
 class NormalizationFactor():
     # Normalization Factor
     # - http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ri-modification-instancemove.html
@@ -31,6 +32,7 @@ class NormalizationFactor():
 
         return cls.__nf[size]
 
+
 class InstanceCounter():
     def __init__(self, nf, count=0.0):
         self.__nf    = float(nf)
@@ -56,6 +58,7 @@ class InstanceCounter():
     def set_footprint(self, footprint):
         self.__count = float(footprint) / self.__nf
         return footprint
+
 
 class Instances():
     def __init__(self):
@@ -159,6 +162,7 @@ class Instances():
                 'footprint' : instance['counter'].get_footprint(),
             })
         return instances
+
 
 class InstanceFetcher():
     def __init__(self, region):
@@ -296,6 +300,7 @@ class InstanceFetcher():
                         ondemand.set_footprint(0.0)
 
         return ondemand_instances, unused_instances
+
 
 class AwsEc2Count(AgentCheck):
     def check(self, instance):

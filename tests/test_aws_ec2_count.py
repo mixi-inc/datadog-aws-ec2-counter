@@ -5,6 +5,7 @@ from mock import call
 
 import aws_ec2_count
 
+
 class TestNormalizationFactor(unittest.TestCase):
     def test_get_sorted_add_sizes(self):
         self.assertEqual(
@@ -30,6 +31,7 @@ class TestNormalizationFactor(unittest.TestCase):
         self.assertEqual(aws_ec2_count.NormalizationFactor.get_value('10xlarge'), 80.0)
         self.assertRaises(TypeError, aws_ec2_count.NormalizationFactor.get_value, ('invalid'))
 
+
 class TestInstanceCounter(unittest.TestCase):
     def test_basic(self):
         counter = aws_ec2_count.InstanceCounter(0.5, 1)
@@ -47,6 +49,7 @@ class TestInstanceCounter(unittest.TestCase):
 
         counter = aws_ec2_count.InstanceCounter(0.5)
         self.assertEqual(counter.get_count(), 0.0)
+
 
 class TestInstances(unittest.TestCase):
     def test_az(self):
@@ -165,6 +168,7 @@ class TestInstances(unittest.TestCase):
             { 'az': 'region-1b', 'itype': 'c3.xlarge', 'family': 'c3', 'size': 'xlarge', 'count': 5.0, 'footprint': 40.0 },
             { 'az': 'region-1b', 'itype': 't2.micro',  'family': 't2', 'size': 'micro',  'count': 5.0, 'footprint':  2.5 },
         ])
+
 
 class TestInstanceFetcher(unittest.TestCase):
     def setUp(self):
@@ -403,6 +407,7 @@ class TestInstanceFetcher(unittest.TestCase):
             { 'az': 'region-1a', 'itype': 'c4.xlarge', 'family': 'c4', 'size': 'xlarge', 'count': 5.0, 'footprint': 40.0 },
             { 'az': 'region-1b', 'itype': 'c4.xlarge', 'family': 'c4', 'size': 'xlarge', 'count': 0.0, 'footprint':  0.0 },
         ])
+
 
 class TestAwsEc2Count(unittest.TestCase):
     def setUp(self):
