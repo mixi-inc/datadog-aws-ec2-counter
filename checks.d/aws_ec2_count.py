@@ -355,4 +355,3 @@ class AwsEc2Count(AgentCheck):
             value,
             tags=tags
         )
-
