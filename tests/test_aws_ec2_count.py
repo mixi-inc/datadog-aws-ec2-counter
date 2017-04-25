@@ -115,7 +115,7 @@ class TestInstances(unittest.TestCase):
         instances.get('region-1b', 'c3', 'xlarge').set_count(5)
         instances.get('region-1b', 't2', 'micro').set_count(5)
 
-        patterns= [
+        patterns = [
             { 'az': 'region-1a', 'family': 'm3', 'size': 'medium', 'count': 5.0, 'footprint': 10.0 },
             { 'az': 'region-1a', 'family': 'm3', 'size': 'large',  'count': 5.0, 'footprint': 20.0 },
             { 'az': 'region-1a', 'family': 'm4', 'size': 'large',  'count': 5.0, 'footprint': 20.0 },
@@ -134,7 +134,7 @@ class TestInstances(unittest.TestCase):
                     self.assertEqual(instance[key].get_count(), pattern['count'])
                     self.assertEqual(instance[key].get_footprint(), pattern['footprint'])
 
-        patterns= [
+        patterns = [
             { 'az': 'region-1a', 'family': 'm3', 'size': 'medium', 'count': 5.0, 'footprint': 10.0 },
             { 'az': 'region-1a', 'family': 'm3', 'size': 'large',  'count': 5.0, 'footprint': 20.0 },
             { 'az': 'region-1a', 'family': 'm4', 'size': 'large',  'count': 5.0, 'footprint': 20.0 },
