@@ -304,7 +304,7 @@ class InstanceFetcher():
 
 class AwsEc2Count(AgentCheck):
     def check(self, instance):
-        if not 'region' in instance:
+        if 'region' not in instance:
             self.log.error('no region')
             return
 
