@@ -10,5 +10,5 @@ test:
 	    ${PYTHON_PATH}python -m unittest -v tests.test_aws_ec2_count
 
 codingrule:
-	${PYTHON_PATH}flake8 --config ./.config/flake8 */*.py
+	find ./ -name "*.py" | ${PYTHON_PATH}flake8 --config ./.config/flake8
 
