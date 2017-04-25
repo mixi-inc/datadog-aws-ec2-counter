@@ -106,7 +106,6 @@ class TestInstances(unittest.TestCase):
         parts = instances.get_all_sizes(None, 'c3')
         self.assertEqual(parts, ['large', 'xlarge', '2xlarge', '4xlarge', '8xlarge'])
 
-
     def test_get_all_instances(self):
         instances = aws_ec2_count.Instances()
         instances.get('region-1a', 'm3', 'medium').set_count(5)
