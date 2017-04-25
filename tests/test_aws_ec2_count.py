@@ -5,6 +5,7 @@ from mock import call
 
 import aws_ec2_count
 
+
 class TestNormalizationFactor(unittest.TestCase):
     def test_get_sorted_add_sizes(self):
         self.assertEqual(
@@ -30,6 +31,7 @@ class TestNormalizationFactor(unittest.TestCase):
         self.assertEqual(aws_ec2_count.NormalizationFactor.get_value('10xlarge'), 80.0)
         self.assertRaises(TypeError, aws_ec2_count.NormalizationFactor.get_value, ('invalid'))
 
+
 class TestInstanceCounter(unittest.TestCase):
     def test_basic(self):
         counter = aws_ec2_count.InstanceCounter(0.5, 1)
@@ -47,6 +49,7 @@ class TestInstanceCounter(unittest.TestCase):
 
         counter = aws_ec2_count.InstanceCounter(0.5)
         self.assertEqual(counter.get_count(), 0.0)
+
 
 class TestInstances(unittest.TestCase):
     def test_az(self):
@@ -103,7 +106,6 @@ class TestInstances(unittest.TestCase):
         parts = instances.get_all_sizes(None, 'c3')
         self.assertEqual(parts, ['large', 'xlarge', '2xlarge', '4xlarge', '8xlarge'])
 
-
     def test_get_all_instances(self):
         instances = aws_ec2_count.Instances()
         instances.get('region-1a', 'm3', 'medium').set_count(5)
@@ -113,7 +115,7 @@ class TestInstances(unittest.TestCase):
         instances.get('region-1b', 'c3', 'xlarge').set_count(5)
         instances.get('region-1b', 't2', 'micro').set_count(5)
 
-        patterns= [
+        patterns = [
             { 'az': 'region-1a', 'family': 'm3', 'size': 'medium', 'count': 5.0, 'footprint': 10.0 },
             { 'az': 'region-1a', 'family': 'm3', 'size': 'large',  'count': 5.0, 'footprint': 20.0 },
             { 'az': 'region-1a', 'family': 'm4', 'size': 'large',  'count': 5.0, 'footprint': 20.0 },
@@ -132,7 +134,7 @@ class TestInstances(unittest.TestCase):
                     self.assertEqual(instance[key].get_count(), pattern['count'])
                     self.assertEqual(instance[key].get_footprint(), pattern['footprint'])
 
-        patterns= [
+        patterns = [
             { 'az': 'region-1a', 'family': 'm3', 'size': 'medium', 'count': 5.0, 'footprint': 10.0 },
             { 'az': 'region-1a', 'family': 'm3', 'size': 'large',  'count': 5.0, 'footprint': 20.0 },
             { 'az': 'region-1a', 'family': 'm4', 'size': 'large',  'count': 5.0, 'footprint': 20.0 },
@@ -165,6 +167,7 @@ class TestInstances(unittest.TestCase):
             { 'az': 'region-1b', 'itype': 'c3.xlarge', 'family': 'c3', 'size': 'xlarge', 'count': 5.0, 'footprint': 40.0 },
             { 'az': 'region-1b', 'itype': 't2.micro',  'family': 't2', 'size': 'micro',  'count': 5.0, 'footprint':  2.5 },
         ])
+
 
 class TestInstanceFetcher(unittest.TestCase):
     def setUp(self):
@@ -285,7 +288,7 @@ class TestInstanceFetcher(unittest.TestCase):
             { 'ReservedInstancesModifications': [] },
             { 'ReservedInstancesModifications': [] },
             { 'ReservedInstancesModifications': [] },
-            { 'ReservedInstancesModifications': [ { 'ModificationResults': [ { 'ReservedInstancesId': '123' } ] } ] }, # processing status
+            { 'ReservedInstancesModifications': [ { 'ModificationResults': [ { 'ReservedInstancesId': '123' } ] } ] },  # processing status
             { 'ReservedInstancesModifications': [] },
         ]
         instances = fetcher.get_reserved_instances()
@@ -309,7 +312,7 @@ class TestInstanceFetcher(unittest.TestCase):
             ],
         }
         self.mock_ec2_client.describe_reserved_instances_modifications.side_effect = [
-            { 'ReservedInstancesModifications': [ { 'ModificationResults': [ {} ] } ] }, # processing status
+            { 'ReservedInstancesModifications': [ { 'ModificationResults': [ {} ] } ] },  # processing status
         ]
         instances = fetcher.get_reserved_instances()
         self.assertTrue(instances is None)
@@ -379,10 +382,10 @@ class TestInstanceFetcher(unittest.TestCase):
 
         # hyblid
         running_instances  = aws_ec2_count.Instances()
-        running_instances.get('region-1a', 'c4', 'medium').set_count(10) # footprint = 20
-        running_instances.get('region-1a', 'c4', 'large').set_count(4)   # footprint = 12
+        running_instances.get('region-1a', 'c4', 'medium').set_count(10)  # footprint = 20
+        running_instances.get('region-1a', 'c4', 'large').set_count(4)    # footprint = 12
         running_instances.get('region-1a', 'c4', 'xlarge').set_count(5)
-        running_instances.get('region-1b', 'c4', 'medium').set_count(4)  # footprint =  8
+        running_instances.get('region-1b', 'c4', 'medium').set_count(4)   # footprint =  8
         running_instances.get('region-1b', 'c4', 'large').set_count(2)
         running_instances.get('region-1b', 'c4', 'xlarge').set_count(10)
         reserved_instances = aws_ec2_count.Instances()
@@ -403,6 +406,7 @@ class TestInstanceFetcher(unittest.TestCase):
             { 'az': 'region-1a', 'itype': 'c4.xlarge', 'family': 'c4', 'size': 'xlarge', 'count': 5.0, 'footprint': 40.0 },
             { 'az': 'region-1b', 'itype': 'c4.xlarge', 'family': 'c4', 'size': 'xlarge', 'count': 0.0, 'footprint':  0.0 },
         ])
+
 
 class TestAwsEc2Count(unittest.TestCase):
     def setUp(self):

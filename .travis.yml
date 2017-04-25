@@ -5,4 +5,6 @@ cache: pip
 install:
     - pip install -r requirements.txt
     - pip install -r requirements-test.txt
-script: make test PYTHON_PATH=''
+script:
+    - make test PYTHON_PATH=''
+    - make codingrule PYTHON_PATH=''
