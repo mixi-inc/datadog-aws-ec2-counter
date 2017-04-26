@@ -303,12 +303,12 @@ class InstanceFetcher():
 
 
 class AwsEc2Count(AgentCheck):
-    def check(self, instance):
-        if 'region' not in instance:
+    def check(self, config):
+        if 'region' not in config:
             self.log.error('no region')
             return
 
-        fetcher = InstanceFetcher(instance['region'])
+        fetcher = InstanceFetcher(config['region'])
 
         reserved_instances = fetcher.get_reserved_instances()
         if reserved_instances is None:
