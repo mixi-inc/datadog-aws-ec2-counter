@@ -5,7 +5,7 @@ AWS の EC2 のオンデマンドインスタンスの稼働状況を [Datadog](
 
 この Agent Check で取得できる情報は以下になります。
 
-- 稼働中の EC2 オンデマンドインスタンス数と footprint 値
+- 稼働中の EC2 オンデマンドインスタンス数と [footprint 値](http://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/ri-modification-instancemove.html)
 - 有効な EC2 リザーブドインスタンス数と footprint 値
 - 未使用状態の EC2 リザーブドインスタンス数と footprint 値
 - 稼働中の EC2 インスタンス全数と footprint 値
@@ -101,8 +101,8 @@ $ sudo /etc/init.d/datadog-agent restart
 
 - オンデマンドインスタンス数は、稼働中のインスタンスと有効なリザーブドインスタンス数との差分で求めています
     - このため、請求額と完全に一致しない場合があります
-    - また、 今後の AWS 側の仕様変更などにより、リザーブドインスタンスの適用条件が変わる可能性があります
-- Region 単位のリザーブドインスタンスは以下の条件で適用するように計算しています
+    - また、今後の AWS 側の仕様変更などにより、リザーブドインスタンスの適用条件が変わる可能性があります
+- Region 単位のリザーブドインスタンスは以下の条件で割引適用するように計算しています
     - Instance Type が一致しているものに優先的に適用
     - 余剰分は同一 Instance Family の最小の Instanence Size から適用するようにしています
         - これにより、オンデマンドインスタンス数が最小になるようにしています
