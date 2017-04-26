@@ -34,8 +34,8 @@ class NormalizationFactor():
 
 
 class InstanceCounter():
-    def __init__(self, nf, count=0.0):
-        self.__nf    = float(nf)
+    def __init__(self, normalization_factor, count=0.0):
+        self.__nf    = float(normalization_factor)
         self.__count = float(count)
 
     def get_count(self):
