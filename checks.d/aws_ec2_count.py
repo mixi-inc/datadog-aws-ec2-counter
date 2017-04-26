@@ -249,6 +249,8 @@ class InstanceFetcher():
         return instances
 
     def get_ondemand_instances(self, running_instances, reserved_instances):
+        # 稼働中インスタンス(running_instances) と契約中のRI(reserved_instances) から
+        # オンデマンドインスタンス(ondemand_instances) と余剰RI(unused_instances) を計算する
         ondemand_instances = Instances()
         unused_instances   = Instances()
 
@@ -261,6 +263,7 @@ class InstanceFetcher():
             az, family, size = running['az'], running['family'], running['size']
             count = running['counter'].get_count()
 
+            # AZ 指定の RI を適用する
             if reserved_instances.has(az, family, size):
                 unused_counter = unused_instances.get(az, family, size)
                 count -= reserved_instances.get(az, family, size).get_count()
@@ -270,6 +273,7 @@ class InstanceFetcher():
                 else:
                     unused_counter.set_count(0)
 
+            # Region 指定の RI を適用する
             if unused_instances.has('region', family, size):
                 unused_counter = unused_instances.get('region', family, size)
                 count -= unused_counter.get_count()
@@ -281,6 +285,7 @@ class InstanceFetcher():
 
             ondemand_instances.get(az, family, size).set_count(count)
 
+        # 余剰 Region 指定 RI を、同一 Instance Family で最小の Instance Size から適用する
         for unused in unused_instances.get_all_instances(az='region'):
             family, size = unused['family'], unused['size']
             if unused['counter'].get_footprint() == 0.0:
