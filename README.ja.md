@@ -12,9 +12,9 @@ AWS の EC2 のオンデマンドインスタンスの稼働状況を [Datadog](
 
 この情報を利用することにより、リザーブドインスタンスの契約の参考にしたり、無駄になっているリザーブドインスタンス契約を発見することができます。
 
-これらの情報は AWS コンソールの EC2 レポートでも確認することができますが、この Agent Check を用いることでリアルタイムかつ、時間ごとの利用状況を詳細に把握できるようになります。
+これらの情報の一部は AWS コンソールの EC2 レポートでも確認することができますが、この Agent Check を用いることでリアルタイムかつ、時間ごとの利用状況を詳細に把握できるようになります。
 
-# メトリクス一覧
+## メトリクス一覧
 
 この Agent Check で取得されるメトリクス一覧は以下となります。
 
@@ -37,7 +37,7 @@ AWS の EC2 のオンデマンドインスタンスの稼働状況を [Datadog](
 | ac-family | Instance Family |
 | ac-type | Instance Type |
 
-# 用意するもの
+## 用意するもの
 
 以下の EC2 インスタンスを用意します。
 
@@ -46,12 +46,12 @@ AWS の EC2 のオンデマンドインスタンスの稼働状況を [Datadog](
 
 このインスタンスに、この Agent Check をインストールします。
 
-# インストール方法
+## インストール方法
 
 ここでは、CentOS にインストールした Datadog Agent に、この Agent Check をインストールする方法を記載します。
 インストール環境によって適宜読み替えてください。
 
-## 1. AWS SDK のインストール
+### 1. AWS SDK のインストール
 
 Agent Check から [AWS SDK for Python](https://aws.amazon.com/jp/sdk-for-python/) が利用できるようにインストールを行います。
 
@@ -59,15 +59,15 @@ Agent Check から [AWS SDK for Python](https://aws.amazon.com/jp/sdk-for-python
 $ sudo /opt/datadog-agent/embedded/bin/pip install boto3
 ```
 
-## 2. カスタム Check のインストール
-このリポジトリの `checks.d/aws_ec2_count.py` を `/etc/dd-agent/checks.d/` に配置します。
+### 2. カスタム Check のインストール
+このリポジトリの `./checks.d/aws_ec2_count.py` を `/etc/dd-agent/checks.d/` に配置します。
 
 ```bash
 $ sudo cp ./checks.d/aws_ec2_count.py /etc/dd-agent/checks.d/
 ```
 
-## 3. カスタム Check の設定ファイルの配置
-このリポジトリの `conf.d/aws_ec2_count.yaml.example` を参考に、 `/etc/dd-agent/conf.d/aws_ec2_count.yaml` を作成します。
+### 3. カスタム Check の設定ファイルの配置
+このリポジトリの `./conf.d/aws_ec2_count.yaml.example` を参考に、 `/etc/dd-agent/conf.d/aws_ec2_count.yaml` を作成します。
 
 ```yaml:aws_ec2_count.yaml
 init_config:
@@ -77,8 +77,8 @@ instances:
     - region: 'ap-northeast-1'
 ```
 
-- min_collection_interval にはチェック間隔（秒数）を指定します
-- region には、チェックを行うリージョンを記述します。複数リージョンを取得するには instances に配列で指定します。
+- `min_collection_interval` にはチェック間隔（秒数）を指定します
+- `region` には、チェックを行うリージョンを記述します。複数リージョンを取得するには `instances` に配列で指定します。
 
 取得対象が東京リージョンであれば、この `aws_ec2_count.yaml.example` をそのまま利用すれば良いでしょう。
 
@@ -86,7 +86,7 @@ instances:
 $ sudo cp conf.d/aws_ec2_count.yaml.example /etc/dd-agent/conf.d/aws_ec2_count.yaml
 ```
 
-## 4. Datadog Agent の再起動
+### 4. Datadog Agent の再起動
 以上で Agent Check のインストールは完了です。
 最後に Datadog Agent を再起動します。
 
@@ -96,10 +96,10 @@ $ sudo /etc/init.d/datadog-agent restart
 
 これで、Datadog にカスタムメトリクスが送信されているはずです。
 
-# 制限事項
+## 制限事項
 この Agent Check には以下の制限事項があります。
 
-- オンデマンドインスタンス数は、稼働中のインスタンスと有効なリザーブドインスタンス数との差分で求めています
+- オンデマンドインスタンス数は、稼働中のインスタンス数と有効なリザーブドインスタンス数との差分で求めています
     - このため、請求額と完全に一致しない場合があります
     - また、今後の AWS 側の仕様変更などにより、リザーブドインスタンスの適用条件が変わる可能性があります
 - Region 単位のリザーブドインスタンスは以下の条件で割引適用するように計算しています
@@ -110,4 +110,7 @@ $ sudo /etc/init.d/datadog-agent restart
 - 以下のインスタンスにのみ対応しています
     - プラットフォームが Linux/UNIX のもの
     - テナンシーが デフォルト のもの
+
+# ライセンス
+このプログラムは [MIT License](http://opensource.org/licenses/MIT) にて提供されます。LICENSE を参照してください。
 
