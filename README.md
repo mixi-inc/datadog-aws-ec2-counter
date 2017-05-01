@@ -13,6 +13,8 @@ By using this custom metrics, you can refer to contracts of reserved instances o
 
 This information can also be confirmed in the EC2 report of the AWS console, but by using this Agent Check, it becomes possible to grasp in detail the usage situation in real time and every minutes.
 
+![example](https://raw.githubusercontent.com/mounemoi/datadog-aws-ec2-counter/images/example.png "example")
+
 ## Metrics
 
 The list of metrics acquired with this Agent Check is as follows.

@@ -14,6 +14,8 @@ AWS の EC2 のオンデマンドインスタンスの稼働状況を [Datadog](
 
 これらの情報の一部は AWS コンソールの EC2 レポートでも確認することができますが、この Agent Check を用いることでリアルタイムかつ、時間ごとの利用状況を詳細に把握できるようになります。
 
+![example](https://raw.githubusercontent.com/mounemoi/datadog-aws-ec2-counter/images/example.png "example")
+
 ## メトリクス一覧
 
 この Agent Check で取得されるメトリクス一覧は以下となります。
