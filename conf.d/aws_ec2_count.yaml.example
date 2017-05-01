@@ -1,6 +1,0 @@
-init_config:
-    min_collection_interval: 60
-
-instances:
-    - region: 'ap-northeast-1'
-
