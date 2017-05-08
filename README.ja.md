@@ -112,6 +112,7 @@ $ sudo /etc/init.d/datadog-agent restart
 - 以下のインスタンスにのみ対応しています
     - プラットフォームが Linux/UNIX のもの
     - テナンシーが デフォルト のもの
+    - スケジュールドリザーブドインスタンスには対応していません
 
 # ライセンス
 このプログラムは [MIT License](http://opensource.org/licenses/MIT) にて提供されます。LICENSE を参照してください。
