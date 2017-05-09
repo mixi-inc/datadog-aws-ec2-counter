@@ -101,6 +101,7 @@ This Agent Check has the following restrictions.
 - The count of On-Demand Instances is calculated as the difference between the count of active instances and the count of valid Reserved Instances.
     - Because of that, it may not exactly match the invoiced amount.
     - In addition, due to changes in AWS specifications in the future, the applicable conditions of Reserved Instances may change.
+    - Please use this Agent Check's data as a reference only. For exact data always refer to AWS.
 - Regional Reserved Instances are calculated with applied discounts under the following conditions.
     - Priority is given to the same Instance Type.
     - The surplus is applied to those of the same Instance Family, starting with the smallest Instance Size.
