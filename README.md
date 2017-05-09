@@ -109,7 +109,7 @@ This Agent Check has the following restrictions.
 - Only the following instances are supported.
     - Platform is `Linux/UNIX`.
     - Tenancy is `default`.
-    - Not Supported Scheduled Reserved Instances.
+    - Scheduled Reserved Instances are not supported.
 
 # License
 This software is released under the [MIT License](http://opensource.org/licenses/MIT), see LICENSE.
