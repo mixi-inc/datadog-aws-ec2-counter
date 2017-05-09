@@ -4,10 +4,10 @@
 This is an Agent Check for [Datadog](https://www.datadoghq.com/) for obtaining On-Demand and Reserved Instances count of AWS EC2.
 The custom metrics that can be obtained with this Agent Check are as follows.
 
-- Count of active EC2 On-Demand Instances and [footprints](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ri-modification-instancemove.html)
-- Count of active EC2 Reserved Instances and footprints
-- Count of unused EC2 Reserved Instances and footprints
-- Total count of active EC2 Instances and footprints
+- Count of active EC2 On-Demand Instances and [footprint](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ri-modification-instancemove.html)
+- Count of active EC2 Reserved Instances and footprint
+- Count of unused EC2 Reserved Instances and footprint
+- Total count of active EC2 Instances and footprint
 
 By using these custom metrics, you can refer to contracts of Reserved Instances or discover unused Reserved Instances.
 
@@ -22,13 +22,13 @@ The list of metrics acquired with this Agent Check is as follows.
 | Metrics | Description |
 |-|-|
 | aws_ec2_count.ondemand.count | Count of active EC2 On-Demand Instances |
-| aws_ec2_count.ondemand.footprint | Footprints of active EC2 On-Demand Instances |
+| aws_ec2_count.ondemand.footprint | Footprint of active EC2 On-Demand Instances |
 | aws_ec2_count.reserved.count | Count of active EC2 Reserved Instances |
-| aws_ec2_count.reserved.footprint | Footprints of active EC2 Reserved Instances |
+| aws_ec2_count.reserved.footprint | Footprint of active EC2 Reserved Instances |
 | aws_ec2_count.reserved_unused.count | Count of unused EC2 Reserved Instances |
-| aws_ec2_count.reserved_unused.footprint | Footprints of unused EC2 Reserved Instances |
+| aws_ec2_count.reserved_unused.footprint | Footprint of unused EC2 Reserved Instances |
 | aws_ec2_count.running.count | Total count of active EC2 Instances |
-| aws_ec2_count.running.footprint | All footprints of active EC2 Instances |
+| aws_ec2_count.running.footprint | All footprint of active EC2 Instances |
 
 Each metric has the following tags, from which you can determine its Availability Zone and Instance Type.
 
