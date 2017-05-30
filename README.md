@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/mounemoi/datadog-aws-ec2-counter.svg?branch=master)](https://travis-ci.org/mounemoi/datadog-aws-ec2-counter)
+[![Build Status](https://travis-ci.org/mixi-inc/datadog-aws-ec2-counter.svg?branch=master)](https://travis-ci.org/mixi-inc/datadog-aws-ec2-counter)
 
 # datadog-aws-ec2-counter
 This is an Agent Check for [Datadog](https://www.datadoghq.com/) for obtaining On-Demand and Reserved Instances count of AWS EC2.
