@@ -209,7 +209,7 @@ class InstanceFetcher():
         reserved_instances = self.__ec2.describe_reserved_instances(
             Filters=[
                 { 'Name' : 'state',               'Values' : [ 'active' ] },
-                { 'Name' : 'product-description', 'Values' : [ 'Linux/UNIX' ] },
+                { 'Name' : 'product-description', 'Values' : [ 'Linux/UNIX', 'Linux/UNIX (Amazon VPC)' ] },
                 { 'Name' : 'instance-tenancy',    'Values' : [ 'default' ] },
             ],
         )
