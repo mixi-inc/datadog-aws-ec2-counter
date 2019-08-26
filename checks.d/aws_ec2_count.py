@@ -17,8 +17,12 @@ class NormalizationFactor():
     __nf['2xlarge']  =  16.0
     __nf['4xlarge']  =  32.0
     __nf['8xlarge']  =  64.0
+    __nf['9xlarge']  =  72.0
     __nf['10xlarge'] =  80.0
+    __nf['12xlarge'] =  96.0
     __nf['16xlarge'] = 128.0
+    __nf['18xlarge'] = 144.0
+    __nf['24xlarge'] = 192.0
     __nf['32xlarge'] = 256.0
 
     @classmethod
