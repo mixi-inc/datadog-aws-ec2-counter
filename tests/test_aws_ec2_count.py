@@ -18,6 +18,7 @@ class TestNormalizationFactor(unittest.TestCase):
                 'large',
                 'xlarge',
                 '2xlarge',
+                '3xlarge',
                 '4xlarge',
                 '6xlarge',
                 '8xlarge',
