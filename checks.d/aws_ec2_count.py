@@ -16,6 +16,7 @@ class NormalizationFactor():
     __nf['xlarge']   =   8.0
     __nf['2xlarge']  =  16.0
     __nf['4xlarge']  =  32.0
+    __nf['6xlarge']  =  48.0
     __nf['8xlarge']  =  64.0
     __nf['9xlarge']  =  72.0
     __nf['10xlarge'] =  80.0
